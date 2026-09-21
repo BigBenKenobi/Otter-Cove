@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stark-studio-pyside6"
+version = "0.1.0"
+description = "A PySide6 desktop reconstruction of Stark Studio"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["PySide6>=6.7"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools]
+py-modules = ["app", "main"]

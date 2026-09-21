@@ -1,0 +1,717 @@
+RETIRED HISTORICAL SNAPSHOT — NOT AN ACTIVE PLAN
+Superseded by ../../PLAN.md (relative to this archive directory).
+Preserved for provenance; do not update or follow its priorities.
+
+STARK STUDIO — IMPLEMENTATION AND ACCEPTANCE PLAN
+=================================================
+Revised: 21 September 2026
+Target: Fedora 44 desktop, PySide6 / Qt Widgets
+Historical source-of-truth statement retired; see the current PLAN.md.
+
+PURPOSE AND SCOPE
+-----------------
+Reconstruct the supplied Stark Studio interface as a usable local desktop GUI.
+The milestone includes real local editing, file selection, local data persistence,
+theming and desktop interaction. Model inference, external search, email delivery,
+CalDAV synchronization, remote authentication, agent execution and AI image
+processing use explicitly labelled deterministic demo adapters. A convincing
+screen alone does not complete a feature: its local flows must work.
+
+The original 55 feature IDs are retained. Their numeric order is a reference
+index, not implementation order. Dependencies below describe completion gates;
+independent layout work may start earlier. A scaffold is not a completed module.
+New numerical thresholds in this revision are acceptance targets, not measured
+claims about the current application.
+
+EVIDENCE AND CURRENT BASELINE
+-----------------------------
+Reviewed: Plan, Current Build source/README/ROADMAP, 74 screenshot references,
+and sampled frames from both screencasts. The 0.01.zip, extensionless 0.02 ZIP,
+and 0.03.zip are historical builds; Current Build is the implementation target.
+References guide appearance/interaction, not proof that a backend must be live.
+Screenshot filenames preserve the reference sequence; use full-resolution images
+for feature work, not contact-sheet thumbnails as pixel-match evidence.
+
+Observed runtime evidence is limited: PySide6 6.11.2 imported successfully; an
+isolated offscreen run created the home view, opened both Theme tabs and submitted
+a local message without exceptions. This does not validate interactive Wayland,
+mouse dragging, desktop scaling, persistence recovery or feature completeness.
+
+Present foundations: layered shell, sidebar animation, child tool-window manager,
+16 theme definitions, 10 background effects, QSettings wrapper, basic message
+cards, and three shortcuts. Most navigation routes resolve to FeaturePlaceholder.
+No feature is marked Done in this revision because the full criteria below have
+not yet been demonstrated.
+
+Known gaps verified in the source/render:
+- Nobody is only a checkable button, without session/persistence semantics.
+- Composer is fixed at 720×96 and only adds local user labels; no session model.
+- Collapsed sidebar hides Settings; account/profile is decorative.
+- Theme More Colors, Density, Frosted, effect colour and Save/Import/Export lack
+  working handlers; harmony generates a preview only.
+- Custom palette overrides are not persisted. Fixed QSS font sizes can override
+  application-level typography preferences.
+- Theme Customize scroll content exposes a light background in a dark theme.
+- Reopening a minimized tool does not restore it; minimized geometry can be saved
+  instead of normal geometry. Drag-end persistence is not explicitly committed.
+These are planning inputs, not changes made by this document.
+
+STATUS DEFINITIONS
+-------------------
+Not started: no dedicated implementation found.
+Scaffold: placeholder route/window only; domain behavior absent.
+UI only: controls are visible but their promised behavior is unwired.
+Partial: meaningful implementation exists; acceptance conditions remain unmet.
+Done: every step criterion AND the common completion gate pass with evidence.
+Blocked: use only with a named missing dependency and a concrete unblock action.
+
+COMMON COMPLETION GATE — APPLIES TO EVERY STEP
+---------------------------------------------
+1. Every visible control works, or is disabled with a specific reason. Mock output
+   is visibly labelled. No placeholder window counts as the actual feature.
+2. Applicable happy, empty, invalid, loading, error, cancel and retry paths are
+   exercised. Features with saved state pass close/reopen AND application restart.
+3. Controls are keyboard reachable, have meaningful names and visible focus, and
+   remain usable at 1100×680 logical pixels and the chosen desktop display scales.
+4. Theme changes affect existing and newly opened UI; no accidental native/default
+   background or unreadable selected/disabled state remains.
+5. Feature state lives in a model/service, not solely in widgets. Shared command,
+   registry, repository and adapter contracts are reused instead of duplicated.
+6. Record the code revision/build identifier, environment, fixture, actions,
+   expected/actual result and screenshot/log where useful. Never mark Done based
+   only on source inspection, AST compilation or the presence of a button.
+7. Use focused automated checks for state transitions, persistence, migrations,
+   validation and coordinate/history logic; use manual visual checks for layout.
+   Do not create tests that merely assert implementation details. Run relevant
+   regression checks after changes; an unresolved acceptance failure blocks Done.
+
+IMPLEMENTATION ORDER AND EXIT GATES
+-----------------------------------
+A. Stabilize shared foundations: 54, 1, 53, 39, 32, 33, 47, 35, 36, 38, 34, 37, 50.
+   Exit: isolated storage, themed shared controls, reliable windows and usable
+   theme/effect workflows; restart and minimum-size checks pass.
+B. Settings and model configuration: 40, 41, 42, 43, 44, 46, 2, 51, 52.
+   Exit: settings persist and update consumers; model/configuration flows and
+   visibility controls work; secrets and mocks obey the stated boundaries.
+C. Core chat/content: 10, 3, 6, 28, 7, 8, 5, 4, 9, 27, 11, 48, 49.
+   Exit: normal/incognito sessions, drafts, attachments, prompt configuration,
+   documents and local search work across module boundaries.
+D. Personal workspaces: 13, 14, 15, 16, 31, 30, 12, 45, 17.
+   Exit: persisted Brain/notes/tasks/mail/calendar flows work with demo services.
+E. Research and management: 18, 19, 20, 29, 21, 22.
+   Exit: comparison scores, research artifacts and Gallery metadata remain
+   consistent across views, cancellation, deletion and restart.
+F. Image editor: 23, 25, 24, 26.
+   Exit: project round-trip, layer composition, undo/redo and complete mock AI
+   preview/apply workflows pass image-based fixtures.
+G. Desktop release pass: 55, plus regression of all preceding accepted features.
+   Exit: documented desktop matrix, reference comparison and performance results.
+
+Dependencies are intentionally one-way: repository contracts precede UI modules;
+Library aggregates Documents and sessions; Research Library connects completed
+research jobs after both sides exist; Notes consumes the scheduler. Mock data is
+allowed to validate a consumer before its producer UI is complete, but the final
+cross-module flow must pass before marking the consuming step Done.
+
+FEATURE STEPS AND ACCEPTANCE CONDITIONS
+---------------------------------------
+
+01. Application shell
+---------------------
+Baseline: Partial
+Depends on: 54
+Deliverable: MainWindow, service/state ownership, route registry and layered workspace; main.py remains an entry point.
+Done only when:
+[ ] Application starts with isolated fresh preferences and with saved preferences; opening a tool preserves the current chat and composer draft.
+[ ] Every exposed route resolves to its intended component or an explicitly labelled unavailable state; feature logic is kept out of main.py.
+[ ] Resizing between 1100×680 and 1920×1080 logical pixels leaves navigation and primary controls reachable.
+
+02. Collapsible sidebar
+-----------------------
+Baseline: Partial
+Depends on: 1, 47, 50
+Deliverable: Expanded and icon-only navigation driven by canonical commands and visibility preferences.
+Done only when:
+[ ] Collapse/expand animates without losing active route, tool state or draft; rapid repeated toggles finish at the requested width.
+[ ] Every icon-only action has a tooltip and accessible name; Settings/account remain reachable when collapsed.
+[ ] Active state, optional entries and badges reflect application state; width and visibility restore after restart.
+
+03. Home / empty session
+------------------------
+Baseline: Partial
+Depends on: 10
+Deliverable: One session view whose empty state contains brand, welcome text, Nobody control and composer.
+Done only when:
+[ ] A session with zero messages displays the welcome state; the first message replaces it with conversation content.
+[ ] New Chat creates a separate empty session and opening an existing session restores its contents; hidden welcome preferences apply immediately.
+[ ] The hero and composer remain centered within the available workspace, including when the sidebar or Notes dock changes width.
+
+04. Chat composer
+-----------------
+Baseline: Partial
+Depends on: 5, 7, 8, 10, 50
+Deliverable: Reusable multiline composer with bounded autosizing, model selection, Agent/Chat mode and send state.
+Done only when:
+[ ] Input grows to a documented maximum height then scrolls; long text and pasted multiline text do not cover controls.
+[ ] Ctrl+Enter sends, Enter inserts a newline, and empty/whitespace-only submission is rejected; shortcut help matches behavior.
+[ ] Selected model, mode and attachments are included in the local submission record; unavailable selections give an actionable state.
+[ ] Submission clears the accepted draft once; switching sessions restores each draft. Mock responses and cancellation work without network access.
+
+05. Model selector
+------------------
+Baseline: Scaffold
+Depends on: 40, 41, 53
+Deliverable: Anchored model popover consuming the shared model registry.
+Done only when:
+[ ] Empty, loading, available, offline and failed-refresh states can be reached with deterministic fixtures.
+[ ] Selection updates the composer and session state; refresh keeps a valid selection and removal clears an invalid one.
+[ ] Add Model opens the shared configuration flow; keyboard navigation, Escape and outside-click dismissal work.
+
+06. Nobody / incognito session
+------------------------------
+Baseline: Partial
+Depends on: 10, 54
+Deliverable: Session-level no-history/no-memory mode, visibly distinguished from normal sessions.
+Done only when:
+[ ] Creating an incognito session displays a persistent indicator and a tooltip explaining local GUI behavior.
+[ ] Its messages, drafts and attachments are excluded from persisted history, search indexes, memory extraction and diagnostic content; restart does not restore them.
+[ ] Changing mode after messages exist has an explicit transition choice and never silently saves private content; closing the session clears its transient state.
+
+07. Composer tool menu and attachments
+--------------------------------------
+Baseline: Not started
+Depends on: 1, 28, 53
+Deliverable: Shared anchored popover primitive, Attach Files, Documents, Workspace and Prompt entry points.
+Done only when:
+[ ] Popover repositions within workspace bounds, accepts keyboard input, dismisses on Escape/outside click, and returns focus to its trigger.
+[ ] Native file selection adds removable attachment chips with filename/type; cancellation leaves the draft unchanged and unreadable files show an error.
+[ ] Documents and Prompt open their actual modules; Workspace selects a local context folder and displays that choice without executing files.
+
+08. Optional composer actions
+-----------------------------
+Baseline: Scaffold
+Depends on: 7, 47, 50
+Deliverable: Command-backed action registry for web search, shell and additional composer tools.
+Done only when:
+[ ] Each action has a stable ID, label, icon, enabled state and handler; adding an action does not require composer layout changes.
+[ ] Appearance toggles add/remove the corresponding action immediately and survive restart.
+[ ] Web and shell actions show clearly labelled simulated results in this milestone; cancellation/error states work and no real shell command or search request is executed.
+
+09. Prompt Studio
+-----------------
+Baseline: Not started
+Depends on: 5, 7, 54
+Deliverable: Inject, Persona and Group tabs backed by persistent prompt configuration.
+Done only when:
+[ ] Prefix/suffix, temperature and token limit validate before apply; invalid numeric values explain the supported range.
+[ ] Personas can be created, selected, edited and deleted; group participants can be added, removed and reordered with sequential/group mode.
+[ ] Applied configuration is visible in the session and used by the mock request builder; closing/reopening and restarting preserve saved definitions while Cancel discards uncommitted edits.
+
+10. Sessions and message rendering
+----------------------------------
+Baseline: Partial
+Depends on: 1, 53, 54
+Deliverable: Local session/message model and reusable user, assistant, system/tool, code and status views.
+Done only when:
+[ ] Create, reopen, rename, favourite, archive and delete sessions through the shared model; destructive actions use confirmation or undo.
+[ ] User, assistant, code and tool/status fixtures render with selection, copy, timestamps and consistent state indicators; rich text cannot execute embedded code.
+[ ] Simulated streaming can complete, fail and cancel; scrolling stays at the bottom only while the user is following it and does not jump away from older messages.
+[ ] A 200-message fixture remains usable and persisted normal sessions reopen with correct ordering; storage/rendering are separated from provider execution.
+
+11. Search
+----------
+Baseline: Scaffold
+Depends on: 10, 27, 50
+Deliverable: Search overlay using a replaceable local search provider.
+Done only when:
+[ ] Search matches session titles and message text plus supported Library metadata/content; results identify their source and open the correct item.
+[ ] Empty query, no matches, searching and provider failure states work; editing queries cannot display stale results.
+[ ] Ctrl+F opens and focuses search, arrows/Enter activate results, Escape restores focus; incognito content is never returned.
+
+12. Email
+---------
+Baseline: Scaffold
+Depends on: 44, 53, 54
+Deliverable: Mailbox list/detail, account/filter controls, tags, compose and local draft state.
+Done only when:
+[ ] Fixture inbox supports selection, search, account/filter changes, tags and readable message details without losing the selected item unexpectedly.
+[ ] Compose validates recipients and required fields, stores local drafts and preserves them across reopen/restart; discard is explicit.
+[ ] Refresh, loading, empty and failure states are exercisable; Send creates a labelled simulated sent item and never transmits mail.
+
+13. Brain — Memories
+--------------------
+Baseline: Scaffold
+Depends on: 53, 54
+Deliverable: Memory cards and local CRUD with search, sorting, selection and enabled state.
+Done only when:
+[ ] Create, edit, delete, enable/disable and select memories; search and sort operate on the same persisted records.
+[ ] Bulk operations affect only selected records; disabled memories are excluded from simulated injection.
+[ ] Tidy previews proposed deduplication/cleanup and requires application of that preview; cancel preserves all entries.
+
+14. Brain — Skills
+------------------
+Baseline: Scaffold
+Depends on: 13
+Deliverable: Skill records with confidence, tags, instructions and enabled/audit state.
+Done only when:
+[ ] Skills can be edited, searched, sorted by confidence and enabled/disabled with persistent results.
+[ ] Mock audit shows pending/running/completed/failed states and a readable result; no actual capability or verification is claimed.
+[ ] Disabled or unapproved skills are excluded from injection; selecting a skill exposes its trigger and instructions.
+
+15. Brain — Add / import / export
+---------------------------------
+Baseline: Not started
+Depends on: 13, 14
+Deliverable: Validated memory and skill forms plus versioned JSON interchange.
+Done only when:
+[ ] Manual memory and skill forms validate required title/when/how fields as appropriate and normalize tags.
+[ ] Export then import into an empty store preserves supported fields; duplicate handling offers a clear skip/replace/copy choice.
+[ ] Malformed or unsupported files show a readable error without partial store corruption; cancelling a picker or preview leaves records untouched.
+
+16. Brain automation preferences
+--------------------------------
+Baseline: Not started
+Depends on: 6, 14, 15
+Deliverable: Persistent extraction/approval thresholds and injection limits for the demo pipeline.
+Done only when:
+[ ] Auto-extract memory/skills, auto-approve, confidence threshold and injection count have documented defaults, valid ranges and saved values.
+[ ] A deterministic normal-session fixture demonstrates each toggle and threshold, including rejection below threshold and the maximum injection count.
+[ ] Incognito sessions bypass extraction and persistence regardless of preferences; the interface identifies extraction as simulated.
+
+17. Calendar
+------------
+Baseline: Scaffold
+Depends on: 44, 53, 54
+Deliverable: Local calendars, month/week/day views, event editing and local .ics import; CalDAV configuration only.
+Done only when:
+[ ] Create/rename calendars and create/edit/delete dated, timed and all-day events; calendar visibility updates every view.
+[ ] Navigation handles month/year boundaries and local timezone/DST fixtures without moving events to the wrong date.
+[ ] Import supported basic .ics VEVENTs with preview and duplicate handling; unsupported recurrence or fields are reported rather than silently dropped.
+[ ] Empty calendar, invalid import and mock CalDAV failure states are usable; local events survive restart.
+
+18. Model Compare
+-----------------
+Baseline: Scaffold
+Depends on: 5, 10, 54
+Deliverable: Comparison setup and results using deterministic mock model runners.
+Done only when:
+[ ] Two or more model slots accept a prompt and Chat/Agent/Search/Research mode; timeout and cancellation end pending runs visibly.
+[ ] Parallel results, blind identity hiding, reveal and shuffle behave consistently; scoring updates a persistent scoreboard without duplicate votes.
+[ ] Continue uses the selected result as context, Save creates a Library item, and Reset clears the run after protecting unsaved results; all answers are labelled demo output.
+
+19. Cookbook
+------------
+Baseline: Scaffold
+Depends on: 41, 53, 54
+Deliverable: Local-model management console with Launch, Download, Dependencies and Settings tabs.
+Done only when:
+[ ] Cache fixtures show model identity, location, availability and state; selecting an entry populates the appropriate controls.
+[ ] Download, launch and dependency operations have deterministic progress, cancel, complete and failure states with retry.
+[ ] Configuration persists; all simulated operations are labelled and neither install packages nor download/execute models.
+
+20. Deep Research
+-----------------
+Baseline: Scaffold
+Depends on: 31, 42, 43
+Deliverable: Research setup and local queued jobs producing demo reports.
+Done only when:
+[ ] Prompt, rounds, format, engine, endpoint and model validate before a job can be queued.
+[ ] Queue/start/pause where supported/cancel/retry drive explicit job states without duplicate starts; progress survives reopening the view.
+[ ] A completed demo job writes one report to Research Library with its setup and completion metadata; cancellation/failure does not create a completed report.
+[ ] Generated sample text and sample citations are identified as mock content, not real research.
+
+21. Gallery — Photos
+--------------------
+Baseline: Scaffold
+Depends on: 53, 54
+Deliverable: Local image import, thumbnail model/view, tags, filters, favourites and selection.
+Done only when:
+[ ] File picker and drag/drop import supported raster formats; corrupt/unsupported files fail individually without losing valid imports.
+[ ] Search, source filter, sorting, favourites and bulk selection update the same metadata store and survive restart.
+[ ] Thumbnails load outside blocking UI work; a 500-image fixture scrolls without full-size decoding on every paint, and missing originals display a recovery state.
+[ ] Import/reference ownership and deletion behavior are explicit; removing a Gallery record never silently deletes the source file.
+
+22. Gallery — Albums
+--------------------
+Baseline: Not started
+Depends on: 21
+Deliverable: Album records referencing imported photos.
+Done only when:
+[ ] Create, rename and delete albums; add/remove photos by selection or drag/drop and show an accurate count/cover.
+[ ] One photo may belong to multiple albums; deleting an album preserves photos and other album memberships.
+[ ] Empty albums and missing photos are handled; membership and ordering survive restart.
+
+23. Gallery editor foundation
+-----------------------------
+Baseline: Not started
+Depends on: 21
+Deliverable: Dedicated canvas/viewport and editor document architecture; QGraphicsView/Scene or an equivalent custom canvas.
+Done only when:
+[ ] Open an imported image, zoom/pan/fit and map pointer positions correctly at multiple zoom levels and display scales.
+[ ] Canvas/document state is separate from tool widgets; an unsaved indicator and save/discard/cancel flow protect work on close or replacement.
+[ ] Save/reopen an editable project and export a flattened PNG with correct dimensions and alpha; failed/cancelled writes retain the document.
+
+24. Gallery editing tools
+-------------------------
+Baseline: Not started
+Depends on: 23, 25
+Deliverable: Move, Crop, Transform, Brush, Eraser, Clone, Lasso, Wand and Sharpen; adapter UI for AI-labelled tools.
+Done only when:
+[ ] Move/crop/transform and brush/eraser/clone operate on the selected editable layer with visible previews and cancel/commit behavior.
+[ ] Lasso and Wand produce visible selections, respect image bounds and constrain applicable edits; Sharpen exposes a preview and strength.
+[ ] Every committed document edit supports undo/redo, including after zoom/pan; cancelled gestures create no history entry.
+[ ] SAM and background removal provide a complete selection/result preview flow using a clearly marked mock adapter; they never imply real AI processing.
+
+25. Gallery layers and history
+------------------------------
+Baseline: Not started
+Depends on: 23
+Deliverable: Independent layer model with pixel content, visibility, opacity, order, transforms and masks; command-based history.
+Done only when:
+[ ] Add/duplicate/remove/reorder layers, rename them, toggle visibility, change opacity and attach/edit masks; rendered output follows the model.
+[ ] Undo/redo restores exact document state for each supported operation; a new edit after undo invalidates the redo branch.
+[ ] Save/reopen retains layer properties and masks; flattened export matches the current composite and transparent areas.
+[ ] History and decoded-image caches have documented bounds; reaching a bound does not corrupt the current document.
+
+26. Inpaint workflow
+--------------------
+Baseline: Not started
+Depends on: 24, 25, 42
+Deliverable: Mask editor and preview/apply workflow with replaceable processing adapter.
+Done only when:
+[ ] Paint/erase masks, change brush size, invert, clear and hide/show overlay without changing underlying pixels until Apply.
+[ ] Prompt, model, strength, generate/remove/outpaint mode and edge controls validate; outpaint updates canvas dimensions predictably.
+[ ] Mock processing supports progress/cancel/failure and preview/reject/apply; Apply is undoable and preserves other layers.
+[ ] Changing images or masks during a job cannot apply a stale result to the wrong document.
+
+27. Library
+-----------
+Baseline: Scaffold
+Depends on: 10, 28, 54
+Deliverable: Shared searchable item model for Chats, Documents, Research and Archive.
+Done only when:
+[ ] Each tab uses consistent search, sorting, selection and empty/error states and opens the correct underlying item.
+[ ] Archive/restore/delete and bulk actions keep source modules synchronized; tidy previews changes before applying them.
+[ ] Persisted items retain stable IDs and category metadata; incognito sessions are excluded.
+
+28. Documents
+-------------
+Baseline: Not started
+Depends on: 53, 54
+Deliverable: Local plain-text/Markdown document import, editor and viewer.
+Done only when:
+[ ] Create/import/open/edit/save supported text and Markdown files with title/content search and source metadata.
+[ ] Unsaved edits prompt save/discard/cancel; external write failure and unsupported encoding produce useful errors without losing editor text.
+[ ] Documents can be selected from the composer and Library; preview rendering does not execute embedded HTML or scripts.
+
+29. Research Library
+--------------------
+Baseline: Not started
+Depends on: 20, 27
+Deliverable: Research category backed by completed research job artifacts.
+Done only when:
+[ ] Each successful research job appears once with title, report, model/setup and date; incomplete jobs are absent from completed reports.
+[ ] Open/search/archive/restore/export a report through the shared Library operations.
+[ ] Reopening/restarting preserves report content and provenance; mock status stays visible in the viewer and exported document.
+
+30. Notes dock
+--------------
+Baseline: Scaffold
+Depends on: 31, 54
+Deliverable: Right-side dock with notes, list/grid modes, archive, pin, selection and reminder links.
+Done only when:
+[ ] Dock open/close/resize adjusts the available workspace without covering essential composer controls; saved width and view mode restore.
+[ ] Create/edit/search/pin/archive/restore/delete notes in list and grid views; bulk actions use explicit selection.
+[ ] Notes persist and reminder metadata creates/updates one linked local task; deleting either side handles the relationship explicitly.
+
+31. Tasks and local scheduler
+-----------------------------
+Baseline: Scaffold
+Depends on: 46, 53, 54
+Deliverable: Task state model plus Tasks, Activity, Completed and Add views; safe in-process demo execution.
+Done only when:
+[ ] Create/edit scheduled demo tasks with timezone-aware due dates and validated recurrence; search and tab counts match stored states.
+[ ] Pending/running/completed/failed/cancelled transitions and activity records are deterministic; Pause All prevents new starts.
+[ ] Restart handles overdue tasks using a documented catch-up policy and never duplicates completion; paused and cancelled tasks do not run.
+[ ] Execution is limited to local demo handlers while the application is open; UI explains that background execution while closed is outside this milestone.
+
+32. Theme presets
+-----------------
+Baseline: Partial
+Depends on: 1
+Deliverable: Sixteen semantic theme definitions consumed consistently by all widgets.
+Done only when:
+[ ] Original, Light, Midnight, Paper, Cyberpunk, Retrowave, Forest, Ocean, Ume, Copper, Terminal, Organs, Lavender, GPT, Claude and Cute are selectable.
+[ ] Selecting a theme updates existing and newly opened windows, popovers, menus, scroll viewports and backgrounds immediately.
+[ ] No unstyled white viewport remains in dark themes; text, focus, selection and disabled controls remain readable in light and dark themes, and the selected preset survives restart.
+
+33. Theme customization
+-----------------------
+Baseline: Partial
+Depends on: 32, 54
+Deliverable: Editable semantic palette with live preview and persistent custom overrides.
+Done only when:
+[ ] Background, panel, text, sidebar, border and accent plus the expanded token set update their intended surfaces immediately.
+[ ] More Colors expands real controls; canceling a picker changes nothing and resetting overrides restores the selected preset.
+[ ] Custom colors survive restart and feed new windows; selecting a preset has a defined reset behavior and never leaves stale overrides.
+
+34. Colour harmony generator
+----------------------------
+Baseline: Partial
+Depends on: 33
+Deliverable: Local deterministic palette generation, preview and explicit application.
+Done only when:
+[ ] Complementary, Analogous, Triadic and Split Complementary modes generate valid palettes for both light and dark settings.
+[ ] Neutral/zero-saturation input and repeated generation are handled deterministically; the displayed palette matches the chosen accent and mode.
+[ ] Generate only previews; Apply maps the preview to named theme tokens and Reset/Cancel preserves or restores the prior theme as labelled.
+
+35. Fonts, density and frosted surfaces
+---------------------------------------
+Baseline: Partial
+Depends on: 32, 47
+Deliverable: Central typography/spacing tokens and a defined frosted appearance with desktop fallback.
+Done only when:
+[ ] Font family, text size and Compact/Comfortable/Roomy density visibly affect intended widgets; hardcoded QSS sizes do not defeat global settings.
+[ ] Long labels and large text remain reachable at the supported minimum window size, including Theme and Settings.
+[ ] Frosted toggle produces the documented appearance or indicates an unsupported fallback; all values restore after restart without sacrificing readability.
+
+36. Animated backgrounds
+------------------------
+Baseline: Partial
+Depends on: 32, 54
+Deliverable: Independent effect lifecycle and shared speed, intensity, size, quality, color and pause settings.
+Done only when:
+[ ] All ten listed effects render, resize and switch repeatedly without stale paint or exceptions; Solid does not run an animation timer.
+[ ] Each applicable control changes the active effect, stays synchronized on panel reopen and persists; irrelevant controls are disabled with an explanation.
+[ ] Pause freezes updates, hidden/minimized application state suspends animation work, and restoration never overrides the user pause setting.
+[ ] On the recorded reference machine at 1720×900 and Balanced quality, a 60-second trace targets 60 FPS with p95 frame time ≤33 ms; slower effects must be tuned or have an explicit lower-quality fallback.
+
+37. Theme save / share
+----------------------
+Baseline: UI only
+Depends on: 33, 34, 35, 36
+Deliverable: Named custom themes with versioned JSON import/export.
+Done only when:
+[ ] Save creates or explicitly replaces a named theme and makes it selectable after restart.
+[ ] Export/import round-trip preserves the documented palette, typography, density and effect fields; generated palettes can be saved after application.
+[ ] Invalid colors, unsupported versions, duplicate names and file write failures are handled without altering the current theme; picker cancellation is a no-op.
+
+38. Peek mode
+-------------
+Baseline: Partial
+Depends on: 39
+Deliverable: Temporary visual transparency for tool content while its titlebar stays usable.
+Done only when:
+[ ] Peek visibly exposes the workspace through the tool body and restores the exact normal appearance when toggled off.
+[ ] The titlebar remains operable; focus/input behavior is explicitly defined as visual-only Peek for this milestone, without promising click-through.
+[ ] Peek behaves correctly through minimize/restore, theme changes and close/reopen and never leaves a hidden overlay intercepting input.
+
+39. Floating tool-window framework
+----------------------------------
+Baseline: Partial
+Depends on: 1, 54
+Deliverable: Shared window lifecycle, drag, resize, stacking, minimize/restore, close and geometry.
+Done only when:
+[ ] Opening an already open tool focuses it; opening a minimized tool restores it and reopening a closed tool retains its intended local state.
+[ ] Drag/resize/raise/minimize/restore work with multiple tools; titlebar and resize controls remain reachable after host resizing.
+[ ] Normal geometry is saved separately from minimized geometry and restored within bounds after restart or display-size change.
+[ ] Closing one tool leaves chat and other tools intact; repeated open/close cycles do not accumulate duplicate widgets, signals or timers.
+
+40. Settings — Add Models
+-------------------------
+Baseline: Scaffold
+Depends on: 1, 53, 54
+Deliverable: Settings navigation shell and model configuration forms using a shared registry.
+Done only when:
+[ ] All planned Settings sections are navigable with retained edits or an explicit discard choice; the model form supports local endpoint and API-provider records.
+[ ] Name, endpoint, provider and capability fields validate before save; deterministic Test results show testing/success/failure and do not issue real requests.
+[ ] Saving creates one registry entry visible in Added Models and selector; any credential control is session-only/mocked until a secure credential adapter exists.
+
+41. Settings — Added Models
+---------------------------
+Baseline: Scaffold
+Depends on: 40
+Deliverable: Shared model list with edit/remove/probe and availability states.
+Done only when:
+[ ] Local/API filters show saved registry records; edit and remove update all dependent selectors.
+[ ] Mock probe supports online/offline/testing/error states and retry without freezing the UI.
+[ ] Removing a default or in-use model shows the affected selections and clears/replaces references consistently; no stale ID is submitted.
+
+42. Settings — AI Defaults
+--------------------------
+Baseline: Not started
+Depends on: 41
+Deliverable: Central capability-based selection for chat, fallbacks, utility, vision, research, images and writing style.
+Done only when:
+[ ] Only compatible configured models can be assigned to each role; unsupported roles show a useful empty state.
+[ ] Fallbacks can be ordered without duplicates and model removal invalidates affected defaults visibly.
+[ ] Composer, comparison, research and image mock adapters resolve the same settings; writing style and defaults restore after restart.
+
+43. Settings — Search
+---------------------
+Baseline: Not started
+Depends on: 40, 54
+Deliverable: Provider settings plus research limits/timeouts through a replaceable adapter.
+Done only when:
+[ ] Provider, result count, endpoint, rounds and timeout fields have documented defaults and enforced valid ranges.
+[ ] Test shows deterministic mock success/failure with actionable feedback; fields and results clearly indicate that no live provider was contacted.
+[ ] Saved settings populate composer search and Deep Research setup consistently and survive restart.
+
+44. Settings — Integrations
+---------------------------
+Baseline: Not started
+Depends on: 40
+Deliverable: Schema-driven configuration pages for API Service, CalDAV, Claude Agent, Codex Agent, CardDAV, IMAP/SMTP and MCP.
+Done only when:
+[ ] Each listed integration has complete add/edit/remove configuration, required-field validation, mock test state and a clear connected-demo/offline distinction.
+[ ] Contacts import previews supported local files and validates records before applying; invalid entries are reported and cancellation leaves the store unchanged.
+[ ] Non-secret configuration persists; secrets never enter QSettings, exported JSON or logs. Real services, agent processes and network authentication are outside this GUI milestone.
+
+45. Settings — Email navigation
+-------------------------------
+Baseline: Not started
+Depends on: 12, 31, 44
+Deliverable: Navigation hub linking Email, mail accounts and related tasks.
+Done only when:
+[ ] Each link opens/focuses the correct module and relevant subsection without creating duplicate windows.
+[ ] Account summaries and task counts use shared models and update after edits elsewhere.
+[ ] No-account and no-task states provide working setup/create entry points.
+
+46. Settings — Reminders
+------------------------
+Baseline: Not started
+Depends on: 44, 54
+Deliverable: Reminder-provider settings for desktop, email, ntfy and webhook with simulated delivery.
+Done only when:
+[ ] Provider forms validate required fields; test actions show labelled mock delivery success/failure and never send a notification externally.
+[ ] Synthesis/persona and public URL preferences persist and are used by the local reminder preview.
+[ ] Browser-notification reference behavior is mapped explicitly to desktop notifications; optional real Fedora notifications are completed under step 55, not implied by a mock test.
+
+47. Settings — Appearance
+-------------------------
+Baseline: Not started
+Depends on: 1, 32, 54
+Deliverable: Declarative live preferences for chat, composer, sidebar and presentation.
+Done only when:
+[ ] Full width, welcome, Nobody visibility, emoji behavior, status summaries, sensitive blur, composer actions and sidebar entries each have a documented default and observable effect.
+[ ] Changes update already open UI immediately and survive restart; hiding controls preserves underlying session content.
+[ ] Settings and New Chat remain accessible through a stable command even if their usual navigation surface is hidden; reset restores documented defaults.
+
+48. Sensitive-span presentation
+-------------------------------
+Baseline: Not started
+Depends on: 10, 47
+Deliverable: Presentation layer for explicitly marked sensitive demo spans; detection remains an adapter concern.
+Done only when:
+[ ] Marked emails/tokens/secrets are concealed when enabled and can be intentionally revealed with an accessible control.
+[ ] Copy/export behavior is explicit and defaults to concealed content; original sensitive text is not exposed through tooltips or accessibility labels while concealed.
+[ ] Toggle updates existing messages; unmarked text is unaffected and the UI does not claim general secret detection.
+
+49. Process/status presentation
+-------------------------------
+Baseline: Not started
+Depends on: 10, 47
+Deliverable: Expandable provider-supplied progress summaries and tool status, separate from answer content.
+Done only when:
+[ ] Pending/running/completed/failed/cancelled fixtures show clear accessible status and can be expanded/collapsed without disrupting scroll position.
+[ ] Appearance preference shows/hides status summaries without deleting data or changing the main answer.
+[ ] Only supplied summaries and demo status are displayed; the GUI does not invent or claim access to hidden model reasoning.
+
+50. Keyboard commands and shortcut editor
+-----------------------------------------
+Baseline: Partial
+Depends on: 1, 54
+Deliverable: Canonical QAction/QShortcut command registry plus persistent user bindings.
+Done only when:
+[ ] Navigation, new/favourite/delete session, incognito, tools and TTS demo actions have stable command IDs, labels and documented defaults.
+[ ] Rebinding detects conflicts within the applicable scope, supports clear/reset and restores custom bindings after restart.
+[ ] Commands work from intended contexts without stealing ordinary text editing; disabled commands explain why, and menus/tooltips show current bindings.
+
+51. Account flows
+-----------------
+Baseline: Not started
+Depends on: 40, 53
+Deliverable: Profile, logout, password change and 2FA visual flows backed by an explicit demo account service.
+Done only when:
+[ ] Profile details, change-password validation and 2FA setup/verification/cancel/error states are fully navigable.
+[ ] Logout resets demo account/session presentation according to an explicit keep-local-data choice; unsaved edits are protected.
+[ ] All success states say demo/simulated; no real authentication, password update or 2FA enrollment is claimed or persisted as plaintext credentials.
+
+52. Profile / Study Mode area
+-----------------------------
+Baseline: UI only
+Depends on: 51
+Deliverable: Interactive sidebar account/status/mode entry.
+Done only when:
+[ ] Profile control opens Account; mode/status switching visibly updates the sidebar and relevant session presentation.
+[ ] Study Mode has a defined GUI effect and explanatory text instead of a decorative label; saved non-sensitive preference restores.
+[ ] Profile and mode controls remain accessible in collapsed sidebar mode and by keyboard.
+
+53. Shared states and feedback
+------------------------------
+Baseline: Not started
+Depends on: 1
+Deliverable: Reusable empty, loading, error, retry and toast components plus deterministic demo adapters.
+Done only when:
+[ ] Components accept module-specific text/actions while sharing styling, focus behavior and accessible status announcements.
+[ ] Fixtures can explicitly select success, empty, loading, failure and cancellation; retries cannot duplicate requests or apply stale results.
+[ ] Toasts do not steal focus or cover essential controls; important errors remain available after toast dismissal.
+[ ] Every completed feature demonstrates its applicable states using the shared components.
+
+54. Persistence and application data
+------------------------------------
+Baseline: Partial
+Depends on: None
+Deliverable: QSettings for preferences/geometry; versioned SQLite for local content and explicit JSON import/export formats.
+Done only when:
+[ ] Define stable IDs and repositories for sessions, models, documents, Brain items, notes, tasks, Gallery metadata and related records; UI accesses repositories through services.
+[ ] Normal content, preferences and geometry round-trip on restart; incognito data and credentials are excluded from ordinary stores.
+[ ] Writes are transactional or atomic; corrupted/unavailable stores report recovery options without silently deleting data, and schema upgrades have fixture-based migration checks.
+[ ] Tests and demo runs use isolated temporary storage, and reset/export/import clearly state which local data is affected.
+
+55. Fedora desktop validation and release polish
+------------------------------------------------
+Baseline: Not started
+Depends on: All feature steps selected for the release
+Deliverable: Native desktop behavior, accessibility, rendering parity, performance and clean shutdown.
+Done only when:
+[ ] Record Fedora version, desktop/session type, Qt/PySide6 version, GPU and display scale; run the acceptance flows under both GNOME Wayland and KDE Wayland, with any unsupported environment explicitly scoped out.
+[ ] Check 100%, 150% and 200% display scaling, minimum/default/maximized layouts, focus/tab order, clipboard, drag/drop and native file dialogs; no unreachable primary control or unreadable text remains.
+[ ] If real local desktop notifications are included, opt-in/test/delivery/failure are verified on each supported desktop; otherwise the release labels them simulated.
+[ ] Closing during background/demo work stops timers/jobs safely and restores valid state on restart; no unintended process remains.
+[ ] Compare matched-state captures against the supplied references; document intentional native differences and verify the performance fixture targets in the acceptance protocol.
+
+ACCEPTANCE PROTOCOL AND TRACKING
+--------------------------------
+For each step keep a short evidence record in Current Build/acceptance/ when it
+is implemented. Suggested fields: step ID, status, build/revision, date, tester,
+OS/session/Qt/display scale, fixture and storage location, actions, expected and
+actual result, evidence paths, remaining failures. Documentation alone is not
+acceptance evidence. Mark checkboxes only after executing the corresponding check.
+Update this Plan and the ROADMAP status together.
+
+Reference comparisons:
+- Match feature, selected theme, expanded/collapsed sidebar, window size and tool
+  state before comparing. Record the source screenshot filename or video time.
+- Check layout hierarchy, proportions, control order, spacing, typography, colors,
+  borders, empty states and interaction. Native window chrome/file dialogs may
+  differ intentionally; document those differences rather than claiming parity.
+- Use Copper and Ocean for the detailed reference flows and Forest for home/
+  background comparison; also verify Light and one other dark preset for contrast.
+
+Shared performance fixtures (targets, to be measured on a recorded machine):
+- 200 messages with mixed prose/code; 1,000 searchable content records; 500 photos
+  with cached thumbnails; editor project of 2048×2048 pixels and five layers.
+- After warm-up, local search at these sizes returns within 300 ms; ordinary
+  selection/tab changes respond within 100 ms. Expensive I/O/decoding/processing
+  shows progress promptly and does not block the GUI event loop for >100 ms.
+- Background animation uses the step 36 target. Record measurement method, p95
+  where applicable, and any bounded cache/history settings. Do not silently lower
+  thresholds; revise the documented target with a rationale if hardware demands it.
+- Repeatedly open/close ten tools and switch sessions/themes twenty times; verify
+  that retained widgets, timers and background jobs do not accumulate unboundedly.
+
+Release completion requires all 55 steps to satisfy this plan, or an explicitly
+revised release scope listing deferred IDs. External backend integration is a
+separate future plan with its own authentication, network, execution and service
+acceptance tests. It is never inferred from a successful GUI simulation.

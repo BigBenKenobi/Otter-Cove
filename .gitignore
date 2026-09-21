@@ -1,0 +1,33 @@
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Local application state and exports
+*.sqlite3
+*.db
+settings.ini
+theme-export.json
+
+# Delivery artifacts and temporary runtime files
+*.zip
+*.tar.gz
+*.sqlite
+*.sqlite3-*
+*.sqlite-*
+*.db-*
+*.log
+*.starktheme.json
+/tmp/
+/temp/
+/test-output/
+
+# Curated acceptance logs are deliberate evidence, not transient runtime output.
+!docs/acceptance/evidence/**/*.log

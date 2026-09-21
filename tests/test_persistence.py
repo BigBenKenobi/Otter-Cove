@@ -1,0 +1,158 @@
+from __future__ import annotations
+
+import json
+import sqlite3
+import tempfile
+import unittest
+from pathlib import Path
+
+from core.data import (
+    AppDataServices,
+    DataStoreCorruptError,
+    DataStoreUnavailableError,
+    DataValidationError,
+    PersistencePolicyError,
+    SQLiteStore,
+)
+from core.data.migrations import SCHEMA_VERSION
+
+
+class PersistenceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.root = Path(self.tempdir.name)
+        self.db_path = self.root / "stark.sqlite3"
+
+    def tearDown(self) -> None:
+        self.tempdir.cleanup()
+
+    def test_fresh_store_creates_current_schema_and_round_trips_domain_records(self) -> None:
+        services = AppDataServices.open(self.db_path)
+        self.assertEqual(services.store.schema_version(), SCHEMA_VERSION)
+
+        session = services.sessions.create_session("Persistent chat")
+        services.sessions.add_message(session.id, "user", "hello", metadata={"mode": "Chat"})
+        model = services.models.create("Local Demo", "local", endpoint="http://127.0.0.1:11434", config={"family": "demo"})
+        document = services.documents.create("Doc", content="body")
+        brain = services.brain.create("memory", "Memory", "Remember this", confidence=0.8, tags=["demo"])
+        note = services.notes.create("Note", body="note body")
+        task = services.tasks.create("Task", description="do it")
+        gallery = services.gallery.create("/tmp/example.png", metadata={"width": 100})
+        services.close()
+
+        reopened = AppDataServices.open(self.db_path)
+        self.assertEqual(reopened.sessions.get_persistent_session(session.id).title, "Persistent chat")
+        self.assertEqual(reopened.sessions.messages(session.id)[0].content, "hello")
+        self.assertEqual(reopened.models.list()[0].id, model.id)
+        self.assertEqual(reopened.documents.list()[0].id, document.id)
+        self.assertEqual(reopened.brain.list()[0].id, brain.id)
+        self.assertEqual(reopened.notes.list()[0].id, note.id)
+        self.assertEqual(reopened.tasks.list()[0].id, task.id)
+        self.assertEqual(reopened.gallery.list()[0].id, gallery.id)
+        reopened.close()
+
+    def test_incognito_session_never_enters_sqlite_or_export(self) -> None:
+        services = AppDataServices.open(self.db_path)
+        normal = services.sessions.create_session("Normal", incognito=False)
+        services.sessions.add_message(normal.id, "user", "persist me")
+        incognito = services.sessions.create_session("Secret temporary chat", incognito=True)
+        services.sessions.add_message(incognito.id, "user", "do not persist")
+
+        ids = {record.id for record in services.sessions.list_persistent_sessions()}
+        self.assertIn(normal.id, ids)
+        self.assertNotIn(incognito.id, ids)
+        snapshot = services.local_data.snapshot()
+        serialized = json.dumps(snapshot)
+        self.assertNotIn(incognito.id, serialized)
+        self.assertNotIn("do not persist", serialized)
+        services.close()
+
+        reopened = AppDataServices.open(self.db_path)
+        self.assertFalse(reopened.sessions.is_incognito(incognito.id))
+        self.assertIsNone(reopened.sessions.get_persistent_session(incognito.id))
+        reopened.close()
+
+    def test_credential_like_configuration_is_rejected(self) -> None:
+        services = AppDataServices.open(self.db_path)
+        with self.assertRaises(PersistencePolicyError):
+            services.models.create("Bad", "api", config={"api_key": "should-never-be-here"})
+        self.assertEqual(services.models.list(), [])
+        services.close()
+
+    def test_atomic_export_reset_and_import_preserve_stable_ids(self) -> None:
+        services = AppDataServices.open(self.db_path)
+        session = services.sessions.create_session("Round trip")
+        services.sessions.add_message(session.id, "user", "one")
+        note = services.notes.create("Saved note", body="hello")
+        export_path = self.root / "backup.json"
+
+        report = services.local_data.export_json(export_path)
+        self.assertEqual(report.operation, "export")
+        self.assertTrue(export_path.exists())
+        self.assertEqual(report.counts["sessions"], 1)
+        self.assertIn("credentials", report.excluded)
+
+        reset = services.local_data.reset_local_content()
+        self.assertEqual(reset.operation, "reset")
+        self.assertEqual(services.sessions.list_persistent_sessions(), [])
+        self.assertEqual(services.notes.list(), [])
+
+        imported = services.local_data.import_json(export_path)
+        self.assertEqual(imported.operation, "import")
+        self.assertEqual(services.sessions.get_persistent_session(session.id).id, session.id)
+        self.assertEqual(services.notes.list()[0].id, note.id)
+        services.close()
+
+    def test_v1_fixture_migrates_to_v2_without_losing_rows(self) -> None:
+        fixture = Path(__file__).parent / "fixtures" / "schema_v1.sql"
+        conn = sqlite3.connect(self.db_path)
+        conn.executescript(fixture.read_text(encoding="utf-8"))
+        conn.execute(
+            "INSERT INTO documents(id,title,content,mime_type,path,created_at,updated_at,metadata_json) VALUES(?,?,?,?,?,?,?,?)",
+            ("document_fixture", "Old doc", "body", "text/plain", None, "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z", "{}"),
+        )
+        conn.commit()
+        conn.close()
+
+        store = SQLiteStore(self.db_path)
+        self.assertEqual(store.schema_version(), SCHEMA_VERSION)
+        row = store.connection.execute("SELECT id, source FROM documents WHERE id='document_fixture'").fetchone()
+        self.assertEqual(row["id"], "document_fixture")
+        self.assertEqual(row["source"], "local")
+        store.close()
+
+
+    def test_failed_import_rolls_back_without_erasing_existing_content(self) -> None:
+        services = AppDataServices.open(self.db_path)
+        original = services.sessions.create_session("Keep me")
+        payload = services.local_data.snapshot()
+        payload["content"]["sessions"].append(dict(payload["content"]["sessions"][0]))
+        bad_import = self.root / "duplicate.json"
+        bad_import.write_text(json.dumps(payload), encoding="utf-8")
+
+        with self.assertRaises(DataValidationError):
+            services.local_data.import_json(bad_import)
+        self.assertIsNotNone(services.sessions.get_persistent_session(original.id))
+        self.assertEqual(len(services.sessions.list_persistent_sessions()), 1)
+        services.close()
+
+    def test_unavailable_store_reports_recovery_without_creating_replacement(self) -> None:
+        blocked_parent = self.root / "not-a-directory"
+        blocked_parent.write_text("block", encoding="utf-8")
+        requested = blocked_parent / "stark.sqlite3"
+        with self.assertRaises(DataStoreUnavailableError) as caught:
+            SQLiteStore(requested)
+        self.assertTrue(caught.exception.recovery_options)
+        self.assertEqual(blocked_parent.read_text(encoding="utf-8"), "block")
+
+    def test_corrupt_store_is_reported_and_never_replaced(self) -> None:
+        original = b"this is deliberately not sqlite"
+        self.db_path.write_bytes(original)
+        with self.assertRaises(DataStoreCorruptError) as caught:
+            SQLiteStore(self.db_path)
+        self.assertEqual(self.db_path.read_bytes(), original)
+        self.assertTrue(caught.exception.recovery_options)
+
+
+if __name__ == "__main__":
+    unittest.main()
