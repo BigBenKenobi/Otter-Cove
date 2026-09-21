@@ -31,3 +31,4 @@ theme-export.json
 
 # Curated acceptance logs are deliberate evidence, not transient runtime output.
 !docs/acceptance/evidence/**/*.log
+docs/reference/
