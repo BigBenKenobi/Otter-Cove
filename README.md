@@ -63,10 +63,21 @@ Work follows the numbered acceptance plan. Phase A has completed target acceptan
 
 Default Fedora data location is `$XDG_DATA_HOME/otter-cove/otter-cove.sqlite3`, or `~/.local/share/otter-cove/otter-cove.sqlite3` when `XDG_DATA_HOME` is unset. For an isolated demo run, set `OTTER_COVE_DATA_DIR` to a temporary directory.
 
+## Clone and start
+
+Clone the public repository, then run all commands from its root. The following
+uses Git's default checkout directory; a differently named clone works the same
+way as long as commands are run from that repository root.
+
+```bash
+git clone https://github.com/BigBenKenobi/Otter-Cove.git
+cd Otter-Cove
+```
+
 ## Project structure
 
 ```text
-otter_cove_pyside6/
+Otter-Cove/                   default directory created by `git clone`
   README.md
   PLAN.md
   ROADMAP.md
@@ -141,7 +152,7 @@ Project governance and evidence are documented in [PLAN.md](PLAN.md), [STATUS.md
 
 ```bash
 sudo dnf install python3-pyside6
-cd otter_cove_pyside6
+# Run from the repository root after cloning (for example, `Otter-Cove/`).
 python3 main.py
 ```
 

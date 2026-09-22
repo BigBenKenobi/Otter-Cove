@@ -2,13 +2,13 @@
 
 Progress review: 21 September 2026 (supersedes the earlier same-day baseline)
 Target: Fedora 44 desktop, PySide6 / Qt Widgets
-Authoritative current plan: PLAN.md in otter_cove_pyside6/
+Authoritative current plan: PLAN.md at the repository root.
 
 ## DOCUMENT OWNERSHIP AND PROVENANCE
 
 This is the sole current implementation and acceptance plan. It adopts the
 21 September GUI progress review formerly stored in the workspace-root Plan.
-The application directory is now otter_cove_pyside6 (formerly Current Build).
+The application lives at the repository root (formerly Current Build).
 All application-relative paths below refer to this directory unless stated otherwise.
 
 - PLAN.md owns scope, feature IDs, dependencies and acceptance conditions.
@@ -36,7 +36,7 @@ implemented slice, not all planned workflows.
 Environment: Fedora Linux 44 (KDE Plasma Desktop Edition); Python 3.14.7;
 PySide6 6.11.2 / Qt 6.11.2. Execution platform: offscreen.
 
-Commands were run before directory renaming; run from otter_cove_pyside6 now:
+Commands were run before directory renaming; run from the repository root now:
   PYTHONDONTWRITEBYTECODE=1 QT_QPA_PLATFORM=offscreen PYTHONPATH=. \
     python3 -m unittest discover -s tests -v
 Result: 65 tests run, 65 passed, no skips or failures (0.608 seconds).

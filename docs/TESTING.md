@@ -1,6 +1,6 @@
 # Testing
 
-Run commands from `otter_cove_pyside6/`. Tests use temporary storage; do not
+Run commands from the repository root. Tests use temporary storage; do not
 point fixtures at a personal profile. See [ACCEPTANCE](ACCEPTANCE.md) for evidence.
 
 ## Automated commands
