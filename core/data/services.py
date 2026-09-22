@@ -319,48 +319,86 @@ class LocalDataService:
             raise DataValidationError(f"Import table '{table}' must be a list of objects.")
         return rows
 
+    @staticmethod
+    def _nested_json(
+        row: dict[str, Any],
+        table: str,
+        field: str,
+        expected_type: type,
+    ) -> Any:
+        """Decode one JSON-in-SQL field as a user-facing validation boundary.
+
+        Export rows contain metadata/config/tags as encoded SQLite text. A valid
+        outer export may still carry malformed nested JSON, so decoding failures
+        and wrong decoded shapes become ``DataValidationError``. This lets the
+        surrounding transaction roll back and the Settings handler show recovery
+        feedback instead of leaking ``JSONDecodeError`` from the service layer.
+        """
+
+        fallback = "[]" if expected_type is list else "{}"
+        raw = row.get(field, fallback)
+        try:
+            value = json.loads(raw)
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise DataValidationError(
+                f"Cannot import {table}.{field}: nested JSON is malformed."
+            ) from exc
+        if not isinstance(value, expected_type):
+            raise DataValidationError(
+                f"Cannot import {table}.{field}: expected {expected_type.__name__} JSON."
+            )
+        return value
+
     def _import_rows(self, content: dict[str, Any], conn) -> None:
         # Parent records first. Repository create methods preserve IDs and validate metadata.
         for row in self._rows(content, "sessions"):
             self.sessions.create(
                 row.get("title", "New Chat"), record_id=row["id"], created_at=row["created_at"], updated_at=row["updated_at"],
-                archived=bool(row.get("archived", 0)), metadata=json.loads(row.get("metadata_json", "{}")), connection=conn,
+                archived=bool(row.get("archived", 0)),
+                metadata=self._nested_json(row, "sessions", "metadata_json", dict), connection=conn,
             )
         for row in self._rows(content, "messages"):
             self.sessions.add_message(
                 row["session_id"], row["role"], row["content"], record_id=row["id"], created_at=row["created_at"],
-                ordinal=int(row["ordinal"]), metadata=json.loads(row.get("metadata_json", "{}")), connection=conn,
+                ordinal=int(row["ordinal"]),
+                metadata=self._nested_json(row, "messages", "metadata_json", dict), connection=conn,
             )
         for row in self._rows(content, "models"):
             self.models.create(
                 row["name"], row["provider"], endpoint=row.get("endpoint", ""), enabled=bool(row.get("enabled", 1)),
-                config=json.loads(row.get("config_json", "{}")), record_id=row["id"], created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
+                config=self._nested_json(row, "models", "config_json", dict),
+                record_id=row["id"], created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
             )
         for row in self._rows(content, "documents"):
             self.documents.create(
                 row["title"], content=row.get("content", ""), mime_type=row.get("mime_type", "text/plain"), path=row.get("path"),
-                source=row.get("source", "local"), metadata=json.loads(row.get("metadata_json", "{}")), record_id=row["id"],
+                source=row.get("source", "local"),
+                metadata=self._nested_json(row, "documents", "metadata_json", dict), record_id=row["id"],
                 created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
             )
         for row in self._rows(content, "brain_items"):
             self.brain.create(
                 row["kind"], row["title"], row["content"], enabled=bool(row.get("enabled", 1)), confidence=float(row.get("confidence", 0.0)),
-                tags=json.loads(row.get("tags_json", "[]")), metadata=json.loads(row.get("metadata_json", "{}")), record_id=row["id"],
+                tags=self._nested_json(row, "brain_items", "tags_json", list),
+                metadata=self._nested_json(row, "brain_items", "metadata_json", dict), record_id=row["id"],
                 created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
             )
         for row in self._rows(content, "notes"):
             self.notes.create(
                 row["title"], body=row.get("body", ""), archived=bool(row.get("archived", 0)), pinned=bool(row.get("pinned", 0)),
-                metadata=json.loads(row.get("metadata_json", "{}")), record_id=row["id"], created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
+                metadata=self._nested_json(row, "notes", "metadata_json", dict),
+                record_id=row["id"], created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
             )
         for row in self._rows(content, "tasks"):
             self.tasks.create(
                 row["title"], description=row.get("description", ""), status=row.get("status", "pending"), due_at=row.get("due_at"),
-                metadata=json.loads(row.get("metadata_json", "{}")), record_id=row["id"], created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
+                metadata=self._nested_json(row, "tasks", "metadata_json", dict),
+                record_id=row["id"], created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
             )
         for row in self._rows(content, "gallery_items"):
             self.gallery.create(
-                row["path"], kind=row.get("kind", "image"), favourite=bool(row.get("favourite", 0)), metadata=json.loads(row.get("metadata_json", "{}")),
+                row["path"], kind=row.get("kind", "image"), favourite=bool(row.get("favourite", 0)),
+                metadata=self._nested_json(row, "gallery_items", "metadata_json", dict),
                 record_id=row["id"], created_at=row["created_at"], updated_at=row["updated_at"], connection=conn,
             )
         for row in self._rows(content, "sessions"):

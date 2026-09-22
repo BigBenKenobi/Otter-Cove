@@ -4,6 +4,8 @@ All notable changes to Otter Cove are documented here.
 
 ## Unreleased
 
+- Convert malformed nested JSON in local-data imports into visible validation
+  feedback while preserving the pre-import database through rollback.
 - Add a Local Data Settings tab for atomic JSON export, confirmed import and
   confirmed reset, with explicit affected/excluded scope and visible errors.
 - Add native animation instrumentation for 1720×900/Balanced frame intervals and

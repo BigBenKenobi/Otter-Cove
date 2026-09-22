@@ -139,6 +139,18 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertIn("Cannot read", panel.data_result.text())
         self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
 
+        nested_malformed = Path(self.tmp.name) / "nested-malformed.json"
+        payload = self.data.local_data.snapshot()
+        payload["content"]["sessions"][0]["metadata_json"] = "{not nested json"
+        nested_malformed.write_text(json.dumps(payload), encoding="utf-8")
+        with (
+            patch("app.QFileDialog.getOpenFileName", return_value=(str(nested_malformed), "JSON")),
+            patch("app.QMessageBox.question", return_value=QMessageBox.Yes),
+        ):
+            self.window._import_local_data()
+        self.assertIn("nested JSON is malformed", panel.data_result.text())
+        self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
+
         with patch("app.QMessageBox.warning", return_value=QMessageBox.No):
             self.window._reset_local_data()
         self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
