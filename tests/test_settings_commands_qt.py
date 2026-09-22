@@ -12,6 +12,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -103,6 +104,50 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertFalse(chat.prompt.shell_button.isEnabled())
         self.assertIn("unavailable", chat.prompt.shell_button.toolTip().casefold())
         self.assertIsNone(chat.property("sensitiveBlurEnabled"))
+
+    def test_local_data_gui_exports_reports_errors_and_confirms_reset(self) -> None:
+        """Settings must expose service operations with explicit scope and consent."""
+
+        from PySide6.QtWidgets import QMessageBox
+
+        session = self.data.sessions.create_session("Keep until reset")
+        self.data.sessions.add_message(session.id, "user", "export me")
+        self.window._route("settings")
+        self.app.processEvents()
+        panel = self.window.window_manager.windows["settings"].content_widget()
+
+        self.assertEqual(panel.data_tab.text(), "Local Data")
+        for button in (panel.data_export_button, panel.data_import_button, panel.data_reset_button):
+            self.assertTrue(button.isEnabled())
+            self.assertTrue(button.accessibleName() or button.text())
+
+        export_path = Path(self.tmp.name) / "gui-export.json"
+        with patch("app.QFileDialog.getSaveFileName", return_value=(str(export_path), "JSON")):
+            self.window._export_local_data()
+        self.assertTrue(export_path.exists())
+        self.assertIn("Export completed", panel.data_result.text())
+        self.assertIn("Excluded:", panel.data_result.text())
+        self.assertIn("Nobody/incognito sessions", panel.data_result.text())
+
+        malformed = Path(self.tmp.name) / "malformed.json"
+        malformed.write_text("not json", encoding="utf-8")
+        with (
+            patch("app.QFileDialog.getOpenFileName", return_value=(str(malformed), "JSON")),
+            patch("app.QMessageBox.question", return_value=QMessageBox.Yes),
+        ):
+            self.window._import_local_data()
+        self.assertIn("Cannot read", panel.data_result.text())
+        self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
+
+        with patch("app.QMessageBox.warning", return_value=QMessageBox.No):
+            self.window._reset_local_data()
+        self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
+
+        with patch("app.QMessageBox.warning", return_value=QMessageBox.Yes):
+            self.window._reset_local_data()
+        self.assertEqual(self.data.sessions.list_persistent_sessions(), [])
+        self.assertIn("Reset completed", panel.data_result.text())
+        self.assertIn("Excluded:", panel.data_result.text())
 
     def test_rebinding_persists_and_conflicts_do_not_replace_existing_binding(self) -> None:
         from core.command_registry import ShortcutConflict

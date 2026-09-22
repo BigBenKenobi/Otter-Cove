@@ -32,6 +32,17 @@ checks. Printing that checklist does not pass it. Inspect actual Qt platform and
 record each manual result. [FEDORA_CHECKLIST](FEDORA_CHECKLIST.md) describes the
 functional pass; PLAN.md owns requirements and numerical targets.
 
+Measure an animated background for the Step 36 target in that same native session:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. python3 scripts/measure_background.py --effect Leaves --duration 60
+```
+
+The command creates isolated SQLite/QSettings fixtures, opens a 1720×900 window at
+Balanced quality and reports actual paint cost and frame intervals. It rejects the
+offscreen/minimal Qt platforms by default. `--allow-offscreen` is only for checking
+the instrumentation path and never constitutes native performance evidence.
+
 | Environment | Automated evidence | Native/manual status |
 |---|---|---|
 | Fedora 44 KDE edition, Python 3.14.7, Qt/PySide6 6.11.2, offscreen | 65/65 plus smoke pass, 21 September | Not applicable to native acceptance |

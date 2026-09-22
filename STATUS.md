@@ -5,8 +5,8 @@ Updated 22 September 2026. Start here when returning to the project.
 **Current focus:** finish and verify Phase A foundations; correct the GUI review
 findings before expanding into new feature modules.
 
-**Next action:** Begin R2 in [PLAN.md](PLAN.md): local-data management/recovery UI,
-then native foundation checks and animation measurements.
+**Next action:** Review the stacked R2 local-data/recovery implementation, then run
+the native Fedora foundation checklist and 60-second animation measurement.
 
 ## What works
 
@@ -17,6 +17,8 @@ then native foundation checks and animation measurements.
 - The Nobody control expands for Large text / Roomy density at minimum window size.
 - Sensitive blur, Web Search and Shell controls are visibly unavailable until their
   consumers exist; session storage status describes behavior that is implemented.
+- Settings now exposes Local Data export/import/reset with confirmation, explicit
+  affected/excluded scope and non-destructive error reporting.
 - Shell, shared feedback/states, floating windows and persistent local data services.
 - Theme customization, harmony, named-theme import/export, animated backgrounds.
 - Appearance settings and shortcut editing. Most product workspaces remain scaffolds.
@@ -24,11 +26,13 @@ then native foundation checks and animation measurements.
 
 ## Latest verification
 
-On 22 September, the current R1 workspace passed **73/73 tests with no skips**,
-plus the offscreen GUI smoke check. The run covers failed-send retry, bidirectional
+On 22 September, the current stacked R2 workspace passed **74/74 tests with no
+skips**, plus the offscreen GUI smoke check. The run covers failed-send retry, bidirectional
 normal/Nobody isolation, session-owned drafts, transient disposal and Large/Roomy
-control sizing. The 1100×680 Large/Roomy state was also rendered and inspected
-offscreen. This is automated/supplementary evidence, not native desktop acceptance.
+control sizing, and Local Data export/error/reset GUI paths. The 1100×680
+Large/Roomy state was also rendered and inspected offscreen. A one-second
+offscreen animation-instrumentation check observed 62.04 FPS and 16.83 ms p95;
+this validates measurement plumbing only, not native desktop performance.
 
 The 21 September **65/65** Fedora offscreen record remains historical evidence for
 the pre-rename source snapshot. Its durable logs and source hashes remain in
@@ -37,9 +41,10 @@ pointer/dialog/scaling checks and animation performance are still pending.
 
 ## Known open issues, in priority order
 
-The reproduced R1 defects have targeted code fixes and offscreen regression
-coverage. Native visual/interaction acceptance and the broader incomplete feature
-steps remain open as recorded in PLAN.md; R2 is the next implementation package.
+The reproduced R1 defects and R2 Local Data gap have targeted code fixes and
+offscreen regression coverage. Native visual/interaction acceptance, startup
+recovery presentation on a real desktop and broader incomplete feature steps remain
+open as recorded in PLAN.md.
 
 ## Working agreements
 

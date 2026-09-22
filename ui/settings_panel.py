@@ -43,6 +43,9 @@ class SettingsPanel(QFrame):
     shortcutClearRequested = Signal(str)
     shortcutResetRequested = Signal(str)
     shortcutResetAllRequested = Signal()
+    dataExportRequested = Signal()
+    dataImportRequested = Signal()
+    dataResetRequested = Signal()
 
     def __init__(
         self,
@@ -50,6 +53,8 @@ class SettingsPanel(QFrame):
         sidebar_routes: Sequence[RouteSpec],
         command_specs: Sequence[CommandSpec],
         bindings: Mapping[str, str],
+        data_path: str = "",
+        schema_version: int = 0,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -67,9 +72,10 @@ class SettingsPanel(QFrame):
         tab_layout.setContentsMargins(10, 0, 10, 0)
         self.appearance_tab = QPushButton("Appearance")
         self.shortcuts_tab = QPushButton("Shortcuts")
+        self.data_tab = QPushButton("Local Data")
         group = QButtonGroup(self)
         group.setExclusive(True)
-        for button in (self.appearance_tab, self.shortcuts_tab):
+        for button in (self.appearance_tab, self.shortcuts_tab, self.data_tab):
             button.setObjectName("TabButton")
             button.setCheckable(True)
             button.setCursor(Qt.PointingHandCursor)
@@ -82,9 +88,11 @@ class SettingsPanel(QFrame):
         self.stack = QStackedWidget()
         self.stack.addWidget(self._build_appearance(appearance, sidebar_routes))
         self.stack.addWidget(self._build_shortcuts(bindings))
+        self.stack.addWidget(self._build_local_data(data_path, schema_version))
         root.addWidget(self.stack, 1)
         self.appearance_tab.clicked.connect(lambda: self.stack.setCurrentIndex(0))
         self.shortcuts_tab.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        self.data_tab.clicked.connect(lambda: self.stack.setCurrentIndex(2))
 
     def _scroll_page(self) -> tuple[QScrollArea, QWidget, QVBoxLayout]:
         scroll = QScrollArea()
@@ -217,6 +225,63 @@ class SettingsPanel(QFrame):
         root.addWidget(reset_all, alignment=Qt.AlignLeft)
         root.addStretch()
         return scroll
+
+    def _build_local_data(self, data_path: str, schema_version: int) -> QScrollArea:
+        """Build explicit export/import/reset controls for the shared data service."""
+
+        scroll, _host, root = self._scroll_page()
+        section = Section("Local application data", "▣")
+
+        location = QLabel(f"SQLite schema {schema_version}\n{data_path}")
+        location.setObjectName("FeatureMuted")
+        location.setWordWrap(True)
+        location.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        location.setAccessibleName("Local data store location")
+        section.layout.addWidget(location)
+
+        explanation = QLabel(
+            "Exports include local sessions/messages, models, documents, Brain items, "
+            "notes, tasks and Gallery metadata. Credentials, Nobody sessions, and "
+            "QSettings preferences/window geometry are excluded. Import replaces the "
+            "listed local content only after confirmation."
+        )
+        explanation.setWordWrap(True)
+        explanation.setObjectName("FeatureMuted")
+        section.layout.addWidget(explanation)
+
+        actions = QHBoxLayout()
+        self.data_export_button = QPushButton("Export JSON…")
+        self.data_import_button = QPushButton("Import JSON…")
+        self.data_reset_button = QPushButton("Reset local content…")
+        for button in (self.data_export_button, self.data_import_button, self.data_reset_button):
+            button.setObjectName("OutlineButton")
+            button.setCursor(Qt.PointingHandCursor)
+            button.setFocusPolicy(Qt.StrongFocus)
+            actions.addWidget(button)
+        self.data_reset_button.setProperty("destructive", True)
+        self.data_export_button.clicked.connect(self.dataExportRequested.emit)
+        self.data_import_button.clicked.connect(self.dataImportRequested.emit)
+        self.data_reset_button.clicked.connect(self.dataResetRequested.emit)
+        section.layout.addLayout(actions)
+
+        self.data_result = QLabel("No local-data operation has run in this window.")
+        self.data_result.setObjectName("FeatureMuted")
+        self.data_result.setWordWrap(True)
+        self.data_result.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.data_result.setAccessibleName("Local data operation result")
+        section.layout.addWidget(self.data_result)
+        root.addWidget(section)
+        root.addStretch()
+        return scroll
+
+    def show_data_result(self, message: str, *, failed: bool = False) -> None:
+        """Display one completed or failed operation without stealing focus."""
+
+        self.data_result.setText(message)
+        self.data_result.setProperty("failed", bool(failed))
+        self.data_result.setAccessibleDescription(message)
+        self.data_result.style().unpolish(self.data_result)
+        self.data_result.style().polish(self.data_result)
 
     def refresh_appearance(self, appearance: Mapping[str, object]) -> None:
         for key, checkbox in self.appearance_checks.items():

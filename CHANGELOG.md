@@ -4,6 +4,10 @@ All notable changes to Otter Cove are documented here.
 
 ## Unreleased
 
+- Add a Local Data Settings tab for atomic JSON export, confirmed import and
+  confirmed reset, with explicit affected/excluded scope and visible errors.
+- Add native animation instrumentation for 1720×900/Balanced frame intervals and
+  paint cost, refusing to treat offscreen measurements as acceptance evidence.
 - Isolate persistent and Nobody message views and drafts, report their actual storage policy, and dispose memory-only sessions when New Chat closes them.
 - Replace the fixed Nobody-button width with content-aware sizing for Large text and Roomy density.
 - Disable and label sensitive blur, Web Search and Shell controls until their runtime consumers exist; describe the implemented summary as session storage status.

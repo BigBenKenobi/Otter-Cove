@@ -55,7 +55,7 @@ class DataOperationReport:
     path: str | None
     counts: dict[str, int]
     affected: tuple[str, ...]
-    excluded: tuple[str, ...] = ("credentials", "incognito sessions", "QSettings preferences/geometry")
+    excluded: tuple[str, ...] = ("credentials", "Nobody/incognito sessions", "QSettings preferences/geometry")
 
 
 class SessionService:
