@@ -9,6 +9,8 @@ editable draft available for a safe retry.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QButtonGroup,
@@ -25,6 +27,14 @@ from PySide6.QtWidgets import (
 
 from core.data import DataStoreError, SessionService
 from ui.iconography import LineIcon
+
+
+@dataclass(frozen=True)
+class ComposerDraft:
+    """Text and mode owned by one session or one unsaved session slot."""
+
+    text: str = ""
+    mode: str = "Agent"
 
 
 class PromptEditor(QPlainTextEdit):
@@ -168,6 +178,11 @@ class PromptBox(QFrame):
 
         return "Agent" if self.agent_button.isChecked() else "Chat"
 
+    def set_mode(self, mode: str) -> None:
+        """Restore a draft's valid Agent/Chat selection."""
+
+        (self.chat_button if mode == "Chat" else self.agent_button).setChecked(True)
+
     def submit(self) -> None:
         """Emit a non-empty submission attempt without consuming its draft.
 
@@ -205,6 +220,11 @@ class ChatSurface(QWidget):
         self._session_id: str | None = None
         self._session_incognito = False
         self._session_title = "New Chat"
+        # Each privacy mode remembers its active session independently. Drafts
+        # belong to a concrete session ID when one exists, or to the pending slot
+        # for that mode before its first accepted message.
+        self._mode_session_ids: dict[bool, str | None] = {False: None, True: None}
+        self._drafts: dict[str, ComposerDraft] = {}
 
         self.setObjectName("ChatSurface")
         self.setAttribute(Qt.WA_TranslucentBackground, True)
@@ -249,7 +269,11 @@ class ChatSurface(QWidget):
         self.nobody.setCursor(Qt.PointingHandCursor)
         self.nobody.setAccessibleName("Nobody mode")
         self.nobody.setToolTip("Nobody mode is ephemeral: this session is not written to local history.")
-        self.nobody.setFixedWidth(82)
+        # Keep the compact reference width while allowing translated or enlarged
+        # text and Roomy density to expand the control instead of clipping it.
+        self.nobody.setMinimumWidth(82)
+        self.nobody.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.nobody.toggled.connect(self._on_nobody_toggled)
         hero.addWidget(self.nobody, alignment=Qt.AlignCenter)
         root.addWidget(self.hero)
 
@@ -298,14 +322,35 @@ class ChatSurface(QWidget):
         return self._session_id
 
     def reset_chat(self) -> None:
+        """Start a blank persistent chat and close any live Nobody session.
+
+        Drafts attached to existing persistent sessions remain session-owned for
+        future session navigation.  Pending unsent text is deliberately cleared
+        by the explicit New Chat action.  Nobody records and their drafts are
+        destroyed because their privacy contract ends when that session closes.
+        """
+
+        self._save_active_draft()
+        private_id = self._mode_session_ids[True]
+        self.sessions.dispose_incognito_session(private_id)
+        if private_id:
+            self._drafts.pop(private_id, None)
+        self._drafts.pop(self._pending_draft_key(True), None)
+        self._drafts.pop(self._pending_draft_key(False), None)
+        self._mode_session_ids = {False: None, True: None}
         self._clear_message_widgets()
         self._session_id = None
         self._session_incognito = False
         self._session_title = "New Chat"
+        previous = self.nobody.blockSignals(True)
         self.nobody.setChecked(False)
+        self.nobody.blockSignals(previous)
+        self.prompt.set_draft_text("")
+        self.prompt.set_mode("Agent")
         self.message_area.hide()
         self.hero.show()
         self.chat_label.setText("New Chat⌄")
+        self._update_session_status()
 
     def apply_appearance(self, preferences: dict) -> None:
         self._appearance.update(preferences)
@@ -361,6 +406,7 @@ class ChatSurface(QWidget):
         self._session_id = session.id
         self._session_incognito = False
         self._session_title = session.title
+        self._mode_session_ids[False] = session.id
         self.nobody.setChecked(False)
         self.hero.hide()
         self.message_area.show()
@@ -368,6 +414,88 @@ class ChatSurface(QWidget):
         for message in messages:
             mode = str(message.metadata.get("mode", "Chat"))
             self._append_message_widget(message.content, mode, role=message.role)
+        self._update_session_status()
+
+    def _pending_draft_key(self, incognito: bool) -> str:
+        """Return the stable key for a mode that has no accepted session yet."""
+
+        return "pending:nobody" if incognito else "pending:persistent"
+
+    def _active_draft_key(self) -> str:
+        """Return the current concrete-session or pending-mode draft key."""
+
+        return self._session_id or self._pending_draft_key(self._session_incognito)
+
+    def _save_active_draft(self) -> None:
+        """Snapshot the current editor text and mode under its owning session."""
+
+        self._drafts[self._active_draft_key()] = ComposerDraft(
+            self.prompt.draft_text(), self.prompt.mode()
+        )
+
+    def _restore_active_draft(self) -> None:
+        """Restore the editor state owned by the currently selected session."""
+
+        draft = self._drafts.get(self._active_draft_key(), ComposerDraft())
+        self.prompt.set_draft_text(draft.text)
+        self.prompt.set_mode(draft.mode)
+
+    def _on_nobody_toggled(self, incognito: bool) -> None:
+        """Switch privacy modes without mixing messages or composer drafts.
+
+        The outgoing view is saved under its own session identity. The selected
+        mode then restores its last live session, messages, draft, and truthful
+        storage status. A new session remains lazy until its first accepted send.
+        """
+
+        if bool(incognito) == self._session_incognito:
+            return
+        self._save_active_draft()
+        self._mode_session_ids[self._session_incognito] = self._session_id
+        self._session_incognito = bool(incognito)
+        self._session_id = self._mode_session_ids[self._session_incognito]
+        self._render_active_session()
+        self._restore_active_draft()
+
+    def _render_active_session(self) -> None:
+        """Render only the selected session and refresh its privacy indicators."""
+
+        self._clear_message_widgets()
+        session = self.sessions.get_session(self._session_id)
+        if session is None:
+            self._session_id = None
+            self._mode_session_ids[self._session_incognito] = None
+            self._session_title = "New Chat"
+            self.message_area.hide()
+            self.hero.show()
+            prefix = "Nobody · " if self._session_incognito else ""
+            self.chat_label.setText(f"{prefix}New Chat⌄")
+            self._update_session_status()
+            return
+        try:
+            messages = self.sessions.messages(session.id)
+        except DataStoreError as exc:
+            self.storageError.emit(exc.user_message())
+            messages = []
+        self._session_title = session.title
+        self.hero.setVisible(not messages)
+        self.message_area.setVisible(bool(messages))
+        prefix = "Nobody · " if self._session_incognito else ""
+        self.chat_label.setText(f"{prefix}{session.title}⌄")
+        for message in messages:
+            mode = str(message.metadata.get("mode", "Chat"))
+            self._append_message_widget(message.content, mode, role=message.role)
+        self._update_session_status()
+
+    def _update_session_status(self) -> None:
+        """Describe the actual persistence policy of the selected chat view."""
+
+        if self._session_incognito:
+            text = "Nobody session · memory only · discarded by New Chat"
+        else:
+            text = "Local GUI session · persistent storage"
+        self.status_summary.setText(text)
+        self.status_summary.setAccessibleDescription(text)
 
     def _on_submitted(self, text: str, mode: str) -> None:
         """Persist one user submission and commit its presentation on success.
@@ -386,6 +514,7 @@ class ChatSurface(QWidget):
                 self._session_id = session.id
                 self._session_incognito = requested_incognito
                 self._session_title = session.title
+                self._mode_session_ids[requested_incognito] = session.id
             self.sessions.add_message(self._session_id, "user", text, metadata={"mode": mode})
         except DataStoreError as exc:
             self.storageError.emit(exc.user_message())
@@ -397,6 +526,8 @@ class ChatSurface(QWidget):
         self.chat_label.setText(f"{prefix}{self._session_title}⌄")
         self._append_message_widget(text, mode, role="user")
         self.prompt.accept_submission(text, mode)
+        self._drafts.pop(self._active_draft_key(), None)
+        self._update_session_status()
         self.message_area.verticalScrollBar().setValue(self.message_area.verticalScrollBar().maximum())
 
     def _append_message_widget(self, text: str, mode: str, *, role: str) -> None:

@@ -4,6 +4,8 @@ All notable changes to Otter Cove are documented here.
 
 ## Unreleased
 
+- Isolate persistent and Nobody message views and drafts, report their actual storage policy, and dispose memory-only sessions when New Chat closes them.
+- Replace the fixed Nobody-button width with content-aware sizing for Large text and Roomy density.
 - Preserve the complete composer draft and selected mode when local message storage fails; a successful retry now clears the accepted draft once and adds one message.
 
 - Consolidated original reference media and acceptance records under docs; recorded architecture/decisions, all-step acceptance ledger, testing matrix and historical GUI review.

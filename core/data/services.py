@@ -1,3 +1,12 @@
+"""UI-facing local-data services and import/export coordination.
+
+Repositories own durable SQLite operations, while these services enforce the
+application's higher-level persistence boundaries.  In particular,
+``SessionService`` keeps Nobody sessions entirely in memory and provides explicit
+disposal so presentation code can end their lifecycle without leaving transient
+messages reachable inside the running process.
+"""
+
 from __future__ import annotations
 
 import json
@@ -50,7 +59,12 @@ class DataOperationReport:
 
 
 class SessionService:
-    """Session API presented to UI code; incognito sessions live only in memory."""
+    """Present persistent and process-local Nobody sessions through one API.
+
+    Persistent records are delegated to ``SessionRepository``. Nobody records and
+    messages are owned by this service for the process lifetime and must be
+    explicitly disposed when their UI session closes.
+    """
 
     def __init__(self, repository: SessionRepository) -> None:
         self.repository = repository
@@ -58,6 +72,8 @@ class SessionService:
         self._incognito_messages: dict[str, list[MessageRecord]] = {}
 
     def create_session(self, title: str = "New Chat", *, incognito: bool = False) -> SessionRecord:
+        """Create a durable session or allocate a memory-only Nobody session."""
+
         if not incognito:
             return self.repository.create(title)
         now = utc_now()
@@ -67,6 +83,8 @@ class SessionService:
         return record
 
     def add_message(self, session_id: str, role: str, content: str, *, metadata: dict[str, Any] | None = None) -> MessageRecord:
+        """Append to the matching memory-only or persistent session."""
+
         if session_id in self._incognito_sessions:
             messages = self._incognito_messages[session_id]
             record = MessageRecord(
@@ -77,6 +95,8 @@ class SessionService:
         return self.repository.add_message(session_id, role, content, metadata=metadata)
 
     def messages(self, session_id: str) -> list[MessageRecord]:
+        """Return an isolated copy of Nobody messages or durable session rows."""
+
         if session_id in self._incognito_sessions:
             return list(self._incognito_messages[session_id])
         return self.repository.messages(session_id)
@@ -90,7 +110,30 @@ class SessionService:
     def get_persistent_session(self, session_id: str) -> SessionRecord | None:
         return self.repository.get(session_id)
 
+    def get_session(self, session_id: str | None) -> SessionRecord | None:
+        """Return either kind of session without exposing the internal stores."""
+
+        if not session_id:
+            return None
+        return self._incognito_sessions.get(session_id) or self.repository.get(session_id)
+
+    def dispose_incognito_session(self, session_id: str | None) -> bool:
+        """Permanently remove one process-local Nobody session and its messages.
+
+        Persistent IDs and unknown IDs are safe no-ops.  Returning whether a
+        transient record was removed lets lifecycle owners verify cleanup without
+        inspecting service internals.
+        """
+
+        if not session_id or session_id not in self._incognito_sessions:
+            return False
+        del self._incognito_sessions[session_id]
+        self._incognito_messages.pop(session_id, None)
+        return True
+
     def is_incognito(self, session_id: str | None) -> bool:
+        """Report whether ``session_id`` currently names a live Nobody session."""
+
         return bool(session_id and session_id in self._incognito_sessions)
 
 

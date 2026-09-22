@@ -105,6 +105,77 @@ class ShellQtAcceptanceTests(unittest.TestCase):
         self.assertEqual(messages[0].metadata["mode"], "Chat")
         self.assertEqual(chat.message_layout.count(), 2)  # one message plus stretch
 
+    def test_normal_and_nobody_views_keep_messages_status_and_drafts_isolated(self) -> None:
+        """Privacy-mode switches restore only state owned by the selected view."""
+
+        chat = self.window.workspace.chat
+        chat.set_draft_text("normal message")
+        chat.prompt.submit()
+        normal_id = chat.session_id
+        chat.set_draft_text("normal unsent draft")
+
+        chat.nobody.setChecked(True)
+        self.app.processEvents()
+        self.assertIsNone(chat.session_id)
+        self.assertEqual(chat.draft_text(), "")
+        self.assertIn("memory only", chat.status_summary.text())
+        self.assertEqual(chat.message_layout.count(), 1)
+
+        chat.set_draft_text("private message")
+        chat.prompt.submit()
+        private_id = chat.session_id
+        chat.set_draft_text("private unsent draft")
+        self.assertTrue(chat.sessions.is_incognito(private_id))
+        self.assertEqual(chat.message_layout.count(), 2)
+
+        chat.nobody.setChecked(False)
+        self.app.processEvents()
+        self.assertEqual(chat.session_id, normal_id)
+        self.assertEqual(chat.draft_text(), "normal unsent draft")
+        self.assertIn("persistent storage", chat.status_summary.text())
+        self.assertEqual(chat.message_layout.count(), 2)
+        self.assertIn("normal message", chat.message_layout.itemAt(0).widget().text())
+
+        chat.nobody.setChecked(True)
+        self.app.processEvents()
+        self.assertEqual(chat.session_id, private_id)
+        self.assertEqual(chat.draft_text(), "private unsent draft")
+        self.assertEqual(chat.message_layout.count(), 2)
+        self.assertIn("private message", chat.message_layout.itemAt(0).widget().text())
+
+    def test_new_chat_disposes_private_session_and_clears_pending_draft(self) -> None:
+        """New Chat explicitly closes Nobody state and starts with an empty draft."""
+
+        chat = self.window.workspace.chat
+        chat.nobody.setChecked(True)
+        chat.set_draft_text("private message")
+        chat.prompt.submit()
+        private_id = chat.session_id
+        chat.set_draft_text("private unsent draft")
+
+        self.window._route("new_chat")
+        self.app.processEvents()
+
+        self.assertFalse(chat.sessions.is_incognito(private_id))
+        self.assertIsNone(chat.session_id)
+        self.assertFalse(chat.nobody.isChecked())
+        self.assertEqual(chat.draft_text(), "")
+        self.assertEqual(chat.prompt.mode(), "Agent")
+        self.assertEqual(chat.message_layout.count(), 1)
+        self.assertIn("persistent storage", chat.status_summary.text())
+
+    def test_large_roomy_nobody_control_expands_to_its_label(self) -> None:
+        """Large typography must grow the Nobody button instead of clipping it."""
+
+        self.window.resize(1100, 680)
+        self.window.theme_manager.set_typography("Sans Serif", "Large")
+        self.window.theme_manager.set_layout("Roomy", self.window.theme_manager.frosted)
+        self.app.processEvents()
+
+        nobody = self.window.workspace.chat.nobody
+        self.assertGreaterEqual(nobody.width(), nobody.sizeHint().width())
+        self.assertGreater(nobody.width(), 82)
+
     def test_every_registered_route_resolves_to_command_or_window(self) -> None:
         for spec in self.window.route_registry:
             if spec.key == "new_chat":

@@ -110,12 +110,18 @@ The probe verified only the normal text in the normal session's stored messages;
 this observation is not evidence of a private-message disk leak.
 Required outcome: explicit transition, one active session view, truthful persistent
 indicator/status, and no implicit copying of content between modes.
+Resolution: implemented in the current R1 branch with isolated normal/Nobody
+session views, drafts and storage-status text; both transition directions have Qt
+regression coverage.
 
 P1 — Transient session disposal and draft ownership incomplete (03/06/10)
 Reproduction: create a private session, then New Chat. The service still retains
 one private session; separately, New Chat retains a previously typed draft.
 Required outcome: a deliberate close/switch policy, disposal of closed private
 records, and session-scoped drafts with explicit unsaved-edit handling.
+Resolution: implemented in the current R1 branch. New Chat clears pending text,
+disposes the live Nobody record/messages and returns to a blank persistent slot;
+privacy-mode switches restore the draft owned by each selected session.
 
 P2 — Large-text Nobody control clips (02/04/35)
 Observed: 1100×680, Sans Serif, Large, Roomy; fixed 82-pixel Nobody button truncates
@@ -123,6 +129,9 @@ its label. The problem remains visible with the sidebar collapsed.
 Required outcome: content/font-aware sizing; inspect all similarly fixed controls
 at supported text sizes/densities. Scrolling long panels is acceptable; clipped
 control labels or unreachable actions are not.
+Resolution: the Nobody control now uses content-aware minimum sizing. Its
+1100×680 Sans Serif/Large/Roomy offscreen render and size-hint regression pass;
+broader native Theme/Settings inspection remains under step 35.
 
 P2 — Preferences ahead of actual functionality (47/48/49)
 Sensitive blur is a stored widget property, not a sensitive-span renderer. Status
@@ -244,8 +253,8 @@ Done only when:
 ### 03. Home / empty session
 
 Baseline: Partial
-Current check: Empty hero, welcome preferences and first-message transition exist. Latest persistent session is restored at startup. New Chat resets the session pointer and message widgets but retains the old composer draft.
-Next implementation instruction: Define session-scoped drafts and deliberate New Chat behavior. Cover switching existing sessions and zero-message restored sessions, not only the first-send path.
+Current check: Empty hero, welcome preferences and first-message transition exist. Latest persistent session is restored at startup. New Chat deliberately clears pending text, closes transient Nobody state and starts a blank persistent slot. Normal/Nobody mode switches restore session-owned drafts.
+Next implementation instruction: Add existing-session navigation and cover zero-message restored sessions; reuse the session-scoped draft ownership already used by privacy-mode transitions.
 Depends on: 10
 Deliverable: One session view whose empty state contains brand, welcome text, Nobody control and composer.
 Done only when:
@@ -258,7 +267,7 @@ Done only when:
 
 Baseline: Partial
 Current check: Composer width adapts and Full-width works; height remains fixed at 96 with a 42-pixel editor limit. Submission only saves local user messages. Injected add_message failure now preserves the complete draft and selected mode; retry is covered to clear once and store one message.
-Next implementation instruction: Preserve future attachments through the same acceptance boundary. Then implement bounded autosizing, model/request records, cancellation and per-session drafts.
+Next implementation instruction: Preserve future attachments through the same acceptance boundary. Then implement bounded autosizing, model/request records, cancellation and connect existing-session navigation to the session-owned draft map.
 Depends on: 5, 7, 8, 10, 50
 Deliverable: Reusable multiline composer with bounded autosizing, model selection, Agent/Chat mode and send state.
 Done only when:
@@ -285,8 +294,8 @@ Done only when:
 ### 06. Nobody / incognito session
 
 Baseline: Partial
-Current check: SessionService keeps incognito records in memory and excludes them from SQLite/export. A normal-to-Nobody transition creates a different session but leaves both sessions' message labels on screen. The status summary still says persistent storage. New Chat leaves the former incognito record retained in the service.
-Next implementation instruction: Add explicit mode-transition handling, render only the active session, update visible status from session state, and dispose transient records when the session is closed. Re-test both directions and restart; do not claim a disk leak from the observed view-mixing issue.
+Current check: SessionService keeps incognito records in memory and excludes them from SQLite/export. Normal/Nobody transitions render only the selected session, restore its draft, and report persistent versus memory-only storage truthfully. New Chat explicitly disposes the transient record and messages.
+Next implementation instruction: Add the eventual session browser/close affordances to the same disposal and draft contracts. Validate the transition visually on a native desktop; keep private content excluded from future search/extraction features.
 Depends on: 10, 54
 Deliverable: Session-level no-history/no-memory mode, visibly distinguished from normal sessions.
 Done only when:
@@ -338,8 +347,8 @@ Done only when:
 ### 10. Sessions and message rendering
 
 Baseline: Partial
-Current check: Persistent session/message repositories and SessionService now drive local user cards and latest-session restoration. No session browser, rename/favourite/delete flow, streaming or rich message types exist.
-Next implementation instruction: Fix mixed-session rendering and draft ownership first, then add session selection/CRUD and richer renderers. Wire disabled favourite/delete commands only when the underlying flows work.
+Current check: Persistent session/message repositories and SessionService now drive local user cards and latest-session restoration. Normal/Nobody views and drafts are isolated, and transient sessions have an explicit disposal path. No session browser, rename/favourite/delete flow, streaming or rich message types exist.
+Next implementation instruction: Add session selection/CRUD and richer renderers using the established render/draft ownership boundary. Wire disabled favourite/delete commands only when the underlying flows work.
 Depends on: 1, 53, 54
 Deliverable: Local session/message model and reusable user, assistant, system/tool, code and status views.
 Done only when:
@@ -670,9 +679,9 @@ Done only when:
 
 ### 35. Fonts, density and frosted surfaces
 
-Baseline: Partial; visual defect found
-Current check: Typography and density now affect styles, and Frosted has a documented translucent fallback. At 1100×680, Sans Serif/Large/Roomy, the fixed-width Nobody label visibly clips.
-Next implementation instruction: Remove fixed-size assumptions that clip scaled controls; inspect both Theme tabs and Settings with every text-size/density combination. Preserve the explicitly non-compositor Frosted fallback.
+Baseline: Partial; targeted clipping defect corrected
+Current check: Typography and density now affect styles, and Frosted has a documented translucent fallback. The Nobody control uses content-aware sizing and passes a 1100×680 Sans Serif/Large/Roomy rendered inspection and size-hint regression.
+Next implementation instruction: Inspect both Theme tabs and Settings with every text-size/density combination for other fixed-size assumptions. Preserve the explicitly non-compositor Frosted fallback.
 Depends on: 32, 47
 Deliverable: Central typography/spacing tokens and a defined frosted appearance with desktop fallback.
 Done only when:
