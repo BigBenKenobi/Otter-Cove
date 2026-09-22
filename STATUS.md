@@ -40,7 +40,7 @@ pointer/dialog/scaling checks and animation performance are still pending.
 - [PLAN.md](PLAN.md): sole current scope, implementation and acceptance plan.
 - [ROADMAP.md](ROADMAP.md): sequence; [docs/acceptance/](docs/acceptance/): new evidence.
 - [AGENTS.md](AGENTS.md): mandatory documentation standard for all new or materially modified code.
-- Run commands from `otter_cove_pyside6/`; use isolated data/settings for checks.
+- Run commands from the repository root; use isolated data/settings for checks.
 - Retired files under `docs/archive/` and workspace `Version History/` are historical.
 - Update this file after meaningful implementation/verification; retain the difference
   between implemented, automatically checked and manually accepted.
