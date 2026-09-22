@@ -18,7 +18,8 @@ the native Fedora foundation checklist and 60-second animation measurement.
 - Sensitive blur, Web Search and Shell controls are visibly unavailable until their
   consumers exist; session storage status describes behavior that is implemented.
 - Settings now exposes Local Data export/import/reset with confirmation, explicit
-  affected/excluded scope and non-destructive error reporting.
+  affected/excluded scope, and non-destructive reporting for malformed outer JSON,
+  nested JSON, and missing required record fields.
 - Shell, shared feedback/states, floating windows and persistent local data services.
 - Theme customization, harmony, named-theme import/export, animated backgrounds.
 - Appearance settings and shortcut editing. Most product workspaces remain scaffolds.
