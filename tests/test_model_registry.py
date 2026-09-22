@@ -11,7 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from core.data import AppDataServices, DataValidationError
+from core.data import AppDataServices, DataValidationError, PersistencePolicyError
 from core.model_defaults import ModelDefaults
 from core.settings import AppSettings
 
@@ -41,6 +41,29 @@ class ModelRegistryTests(unittest.TestCase):
         self.data.models.configure("Qwen", "ollama", "http://localhost:11434", ["chat"])
         with self.assertRaisesRegex(DataValidationError, "already exists"):
             self.data.models.configure("qWEN", "ollama", "http://localhost:11434", ["chat"])
+
+    def test_credential_bearing_endpoints_are_rejected_and_never_exported(self) -> None:
+        """URL userinfo/query secrets must not enter SQLite or exported JSON."""
+
+        rejected = (
+            "https://user:pass@example.invalid/v1",
+            "https://example.invalid/v1?api_key=do-not-store",
+            "https://example.invalid/v1?next=token%3Ddo-not-store",
+        )
+        for endpoint in rejected:
+            with self.subTest(endpoint=endpoint):
+                with self.assertRaises(PersistencePolicyError):
+                    self.data.models.configure("Unsafe", "custom-api", endpoint, ["chat"])
+
+        safe = self.data.models.configure(
+            "Safe", "custom-api", "https://example.invalid/v1?region=nz", ["chat"]
+        )
+        export_path = self.root / "models.json"
+        self.data.local_data.export_json(export_path)
+        exported = export_path.read_text(encoding="utf-8")
+        self.assertIn(safe.endpoint, exported)
+        self.assertNotIn("do-not-store", exported)
+        self.assertNotIn("user:pass", exported)
 
     def test_edit_preserves_identity_and_remove_reports_missing(self) -> None:
         original = self.data.models.configure(
