@@ -99,8 +99,9 @@ class PromptBox(QFrame):
         search.setObjectName("PromptIcon")
         search.setFixedSize(36, 36)
         search.setCursor(Qt.PointingHandCursor)
-        search.setToolTip("Web search")
-        search.setAccessibleName("Web search")
+        search.setToolTip("Web search is unavailable in this local GUI milestone.")
+        search.setAccessibleName("Web search, unavailable")
+        search.setEnabled(False)
         search.clicked.connect(lambda: self.actionRequested.emit("search"))
         search_icon = LineIcon("search", 22, search, follow_parent=True)
         search_icon.move(7, 7)
@@ -110,8 +111,9 @@ class PromptBox(QFrame):
         term.setObjectName("PromptIcon")
         term.setFixedSize(36, 36)
         term.setCursor(Qt.PointingHandCursor)
-        term.setToolTip("Shell access")
-        term.setAccessibleName("Shell access")
+        term.setToolTip("Shell access is unavailable; no command execution is connected.")
+        term.setAccessibleName("Shell access, unavailable")
+        term.setEnabled(False)
         term.clicked.connect(lambda: self.actionRequested.emit("tools"))
         term_icon = LineIcon("shell", 22, term, follow_parent=True)
         term_icon.move(7, 7)
@@ -367,10 +369,9 @@ class ChatSurface(QWidget):
         self.status_summary.setVisible(bool(self._appearance.get("show_status_summaries", True)))
         minimal = str(self._appearance.get("emoji_mode", "Native")) == "Minimal"
         self.hero_title.setText("Otter Cove" if minimal else "♠ Otter Cove")
-        # Sensitive-span handling is completed by step 48. The preference is
-        # retained here so existing/future message widgets can react live without
-        # changing the underlying session content.
-        self.setProperty("sensitiveBlurEnabled", bool(self._appearance.get("sensitive_blur", True)))
+        # Sensitive-span configuration remains in the declarative preference
+        # model for its future renderer. No widget property is set here because
+        # doing so would imply that protection exists before step 48 implements it.
         self._update_prompt_width()
 
     def _update_prompt_width(self) -> None:

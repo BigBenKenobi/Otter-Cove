@@ -5,8 +5,8 @@ Updated 22 September 2026. Start here when returning to the project.
 **Current focus:** finish and verify Phase A foundations; correct the GUI review
 findings before expanding into new feature modules.
 
-**Next action:** Finish R1 in [PLAN.md](PLAN.md) by correcting preferences that
-currently imply sensitive-span or process/search functionality ahead of consumers.
+**Next action:** Begin R2 in [PLAN.md](PLAN.md): local-data management/recovery UI,
+then native foundation checks and animation measurements.
 
 ## What works
 
@@ -15,6 +15,8 @@ currently imply sensitive-span or process/search functionality ahead of consumer
 - Normal and Nobody sessions render isolated messages, own separate drafts and show
   truthful storage status; New Chat disposes transient private records.
 - The Nobody control expands for Large text / Roomy density at minimum window size.
+- Sensitive blur, Web Search and Shell controls are visibly unavailable until their
+  consumers exist; session storage status describes behavior that is implemented.
 - Shell, shared feedback/states, floating windows and persistent local data services.
 - Theme customization, harmony, named-theme import/export, animated backgrounds.
 - Appearance settings and shortcut editing. Most product workspaces remain scaffolds.
@@ -22,7 +24,7 @@ currently imply sensitive-span or process/search functionality ahead of consumer
 
 ## Latest verification
 
-On 22 September, the current R1 workspace passed **72/72 tests with no skips**,
+On 22 September, the current R1 workspace passed **73/73 tests with no skips**,
 plus the offscreen GUI smoke check. The run covers failed-send retry, bidirectional
 normal/Nobody isolation, session-owned drafts, transient disposal and Large/Roomy
 control sizing. The 1100×680 Large/Roomy state was also rendered and inspected
@@ -35,7 +37,9 @@ pointer/dialog/scaling checks and animation performance are still pending.
 
 ## Known open issues, in priority order
 
-1. Sensitive blur and process presentation have preferences ahead of functionality.
+The reproduced R1 defects have targeted code fixes and offscreen regression
+coverage. Native visual/interaction acceptance and the broader incomplete feature
+steps remain open as recorded in PLAN.md; R2 is the next implementation package.
 
 ## Working agreements
 
