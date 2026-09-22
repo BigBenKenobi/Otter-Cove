@@ -4,6 +4,8 @@ All notable changes to Otter Cove are documented here.
 
 ## Unreleased
 
+- Preserve the complete composer draft and selected mode when local message storage fails; a successful retry now clears the accepted draft once and adds one message.
+
 - Consolidated original reference media and acceptance records under docs; recorded architecture/decisions, all-step acceptance ledger, testing matrix and historical GUI review.
 - Preserved a fresh 65/65 offscreen test/smoke record with source hashes; clarified that Git tagging and native/manual acceptance remain outstanding.
 

@@ -1,3 +1,12 @@
+"""Chat workspace and composer widgets.
+
+This presentation module owns the local chat surface, delegates session and
+message persistence to :class:`core.data.SessionService`, and reflects accepted
+messages in Qt widgets.  Composer text remains presentation-owned until the
+service accepts a submission, which lets storage failures leave the complete
+editable draft available for a safe retry.
+"""
+
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
@@ -19,9 +28,13 @@ from ui.iconography import LineIcon
 
 
 class PromptEditor(QPlainTextEdit):
+    """Multiline editor that translates Ctrl+Enter into a submit request."""
+
     submitRequested = Signal()
 
     def keyPressEvent(self, event) -> None:
+        """Request submission for Ctrl+Enter and preserve normal editor input."""
+
         if event.key() in (Qt.Key_Return, Qt.Key_Enter) and event.modifiers() & Qt.ControlModifier:
             self.submitRequested.emit()
             event.accept()
@@ -30,6 +43,14 @@ class PromptEditor(QPlainTextEdit):
 
 
 class PromptBox(QFrame):
+    """Own the editable draft and emit submission attempts to the chat surface.
+
+    The box retains its text and selected mode while a submission is attempted.
+    Its owner must call :meth:`accept_submission` after durable acceptance; a
+    failed attempt therefore leaves the exact draft ready for correction or
+    retry instead of losing user input.
+    """
+
     submitted = Signal(str, str)
     actionRequested = Signal(str)
 
@@ -133,20 +154,43 @@ class PromptBox(QFrame):
         self.shell_button.setVisible(bool(shell))
 
     def draft_text(self) -> str:
+        """Return the complete editor contents without trimming user input."""
+
         return self.editor.toPlainText()
 
     def set_draft_text(self, text: str) -> None:
+        """Replace the editable draft, primarily for restoration and tests."""
+
         self.editor.setPlainText(text)
 
     def mode(self) -> str:
+        """Return the currently selected submission mode."""
+
         return "Agent" if self.agent_button.isChecked() else "Chat"
 
     def submit(self) -> None:
+        """Emit a non-empty submission attempt without consuming its draft.
+
+        Storage is performed by :class:`ChatSurface`.  Keeping ownership here
+        until that boundary reports success prevents local-data failures from
+        clearing text or changing the selected mode.
+        """
+
         text = self.editor.toPlainText().strip()
         if not text:
             return
-        self.editor.clear()
         self.submitted.emit(text, self.mode())
+
+    def accept_submission(self, text: str, mode: str) -> None:
+        """Clear the draft accepted by the owner if it is still current.
+
+        The identity check protects a newer edit or mode change if persistence
+        later becomes asynchronous.  A successful synchronous submission clears
+        exactly once; a failed submission never calls this method.
+        """
+
+        if self.editor.toPlainText().strip() == text and self.mode() == mode:
+            self.editor.clear()
 
 
 class ChatSurface(QWidget):
@@ -326,6 +370,14 @@ class ChatSurface(QWidget):
             self._append_message_widget(message.content, mode, role=message.role)
 
     def _on_submitted(self, text: str, mode: str) -> None:
+        """Persist one user submission and commit its presentation on success.
+
+        Session creation may succeed before message storage fails.  In that case
+        the retained session is reused on retry, while the composer draft and
+        mode stay untouched.  The message widget and draft clear are both
+        committed only after ``add_message`` returns successfully.
+        """
+
         requested_incognito = self.nobody.isChecked()
         try:
             if self._session_id is None or self._session_incognito != requested_incognito:
@@ -344,6 +396,7 @@ class ChatSurface(QWidget):
         prefix = "Nobody · " if self._session_incognito else ""
         self.chat_label.setText(f"{prefix}{self._session_title}⌄")
         self._append_message_widget(text, mode, role="user")
+        self.prompt.accept_submission(text, mode)
         self.message_area.verticalScrollBar().setValue(self.message_area.verticalScrollBar().maximum())
 
     def _append_message_widget(self, text: str, mode: str, *, role: str) -> None:
