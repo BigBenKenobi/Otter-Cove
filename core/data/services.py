@@ -24,20 +24,20 @@ from .repositories import (
 )
 from .timeutil import utc_now
 
-EXPORT_FORMAT = "stark-studio-local-data"
+EXPORT_FORMAT = "otter-cove-local-data"
 EXPORT_VERSION = 1
 
 
 def default_data_dir() -> Path:
     root = os.environ.get("XDG_DATA_HOME")
     if root:
-        return Path(root).expanduser() / "stark-studio"
-    return Path.home() / ".local" / "share" / "stark-studio"
+        return Path(root).expanduser() / "otter-cove"
+    return Path.home() / ".local" / "share" / "otter-cove"
 
 
 def default_database_path() -> Path:
-    override = os.environ.get("STARK_STUDIO_DATA_DIR")
-    return (Path(override).expanduser() if override else default_data_dir()) / "stark-studio.sqlite3"
+    override = os.environ.get("OTTER_COVE_DATA_DIR")
+    return (Path(override).expanduser() if override else default_data_dir()) / "otter-cove.sqlite3"
 
 
 @dataclass(frozen=True)
@@ -234,7 +234,7 @@ class LocalDataService:
         try:
             payload = json.loads(source.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
-            raise DataValidationError(f"Cannot read Stark Studio data export: {exc}") from exc
+            raise DataValidationError(f"Cannot read Otter Cove data export: {exc}") from exc
         self._validate_import(payload)
         content = payload["content"]
         counts = {table: len(content.get(table, [])) for table in self.TABLES}
@@ -259,7 +259,7 @@ class LocalDataService:
         if not isinstance(payload, dict):
             raise DataValidationError("Import root must be a JSON object.")
         if payload.get("format") != EXPORT_FORMAT:
-            raise DataValidationError("This is not a Stark Studio local-data export.")
+            raise DataValidationError("This is not an Otter Cove local-data export.")
         if payload.get("version") != EXPORT_VERSION:
             raise DataValidationError(f"Unsupported local-data export version: {payload.get('version')!r}")
         if not isinstance(payload.get("content"), dict):

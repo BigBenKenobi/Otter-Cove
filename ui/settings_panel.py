@@ -98,7 +98,7 @@ class SettingsPanel(QFrame):
         grid = QGridLayout()
         checks = [
             ("Full-width composer", "full_width", "Allow the composer to use the available chat width."),
-            ("Show welcome", "show_welcome", "Show the Stark Studio welcome copy on an empty chat."),
+            ("Show welcome", "show_welcome", "Show the Otter Cove welcome copy on an empty chat."),
             ("Show Nobody", "show_nobody", "Show the ephemeral Nobody control. Hiding it does not change an active session."),
             ("Status summaries", "show_status_summaries", "Show the local GUI/session status summary."),
             ("Sensitive-span blur", "sensitive_blur", "Preference used by explicitly marked demo spans; general secret detection is not implied."),

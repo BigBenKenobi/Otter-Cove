@@ -166,7 +166,7 @@ class FeedbackManager(QObject):
             suffix = "issue" if count_issues == 1 else "issues"
             self.issue_button.setText(f"!  {count_issues} {suffix}")
             self.issue_button.setAccessibleDescription(
-                f"{count_issues} important Stark Studio {suffix} remain available."
+                f"{count_issues} important Otter Cove {suffix} remain available."
             )
             self.issue_button.adjustSize()
             self.issue_button.show()

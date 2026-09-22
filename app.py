@@ -1,4 +1,4 @@
-"""Compose and coordinate Stark Studio's top-level Qt application shell.
+"""Compose and coordinate Otter Cove's top-level Qt application shell.
 
 ``main.py`` creates :class:`MainWindow`; this module then connects the durable
 settings/data layer, shared shell state, route/command registries, and visual
@@ -40,7 +40,7 @@ from ui.workspace import Workspace
 
 
 class MainWindow(QMainWindow):
-    """Top-level owner and composition root for one running Stark Studio shell.
+    """Top-level owner and composition root for one running Otter Cove shell.
 
     ``main.main`` creates this window after Qt has initialized.  The window owns
     the long-lived settings wrapper, SQLite-facing services, route state, theme
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
         recovery until the Qt event loop can report valid display geometry.
         """
         super().__init__()
-        self.setWindowTitle("Stark Studio — PySide6 concept")
+        self.setWindowTitle("Otter Cove — PySide6 concept")
         self.setMinimumSize(1100, 680)
 
         # These objects outlive every feature panel.  SQLite content and QSettings
@@ -230,7 +230,7 @@ class MainWindow(QMainWindow):
         the shell so important feedback uses the same accessible, persistent path
         as failures triggered by other feature panels.
         """
-        self.feedback.error("Stark Studio local data", message, important=True)
+        self.feedback.error("Otter Cove local data", message, important=True)
 
     def _route(self, route: str) -> None:
         """Dispatch a route key from navigation, chat actions, or keyboard commands.
@@ -821,9 +821,9 @@ class MainWindow(QMainWindow):
         # nor state changes; it is an expected non-error dialog outcome.
         path, _selected = QFileDialog.getOpenFileName(
             self,
-            "Import Stark Studio theme",
+            "Import Otter Cove theme",
             "",
-            "Stark Studio Theme (*.json *.starktheme);;JSON (*.json);;All files (*)",
+            "Otter Cove Theme (*.json *.ottercove);;JSON (*.json);;All files (*)",
         )
         if not path:
             return
@@ -859,9 +859,9 @@ class MainWindow(QMainWindow):
         # offers a recognizable extension while the filter controls file selection.
         path, _selected = QFileDialog.getSaveFileName(
             self,
-            "Export Stark Studio theme",
-            f"{name}.starktheme.json",
-            "Stark Studio Theme (*.json);;All files (*)",
+            "Export Otter Cove theme",
+            f"{name}.ottercove.json",
+            "Otter Cove Theme (*.json);;All files (*)",
         )
         if not path:
             return

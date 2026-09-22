@@ -6,7 +6,7 @@ from typing import Iterable, Iterator
 
 @dataclass(frozen=True, slots=True)
 class RouteSpec:
-    """Declarative description of a route exposed by the Stark Studio shell.
+    """Declarative description of a route exposed by the Otter Cove shell.
 
     The registry deliberately contains metadata only.  Widgets and backend logic
     remain outside this module so route validation can run without Qt.
@@ -54,7 +54,7 @@ class RouteRegistry:
         try:
             return self._routes[key]
         except KeyError as exc:
-            raise KeyError(f"Unknown Stark Studio route: {key}") from exc
+            raise KeyError(f"Unknown Otter Cove route: {key}") from exc
 
     def sidebar_routes(self) -> tuple[RouteSpec, ...]:
         return tuple(route for route in self if route.sidebar)

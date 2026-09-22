@@ -139,7 +139,7 @@ class StudioTitleBar(QFrame):
 
 
 class StudioWindow(QFrame):
-    """Reusable movable/resizable inner window used by Stark Studio tools.
+    """Reusable movable/resizable inner window used by Otter Cove tools.
 
     Close is intentionally a hide operation owned by ``StudioWindowManager`` so
     the content widget and its unsaved/local UI state survive close/reopen cycles.

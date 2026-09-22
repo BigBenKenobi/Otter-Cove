@@ -187,7 +187,7 @@ class ChatSurface(QWidget):
         hero.setContentsMargins(0, 0, 0, 0)
         hero.setAlignment(Qt.AlignCenter)
         hero.setSpacing(8)
-        self.hero_title = QLabel("♠ Stark Studio")
+        self.hero_title = QLabel("♠ Otter Cove")
         self.hero_title.setObjectName("HeroTitle")
         self.hero_title.setAlignment(Qt.AlignCenter)
         hero.addWidget(self.hero_title)
@@ -277,7 +277,7 @@ class ChatSurface(QWidget):
         self.nobody.setVisible(bool(self._appearance.get("show_nobody", True)))
         self.status_summary.setVisible(bool(self._appearance.get("show_status_summaries", True)))
         minimal = str(self._appearance.get("emoji_mode", "Native")) == "Minimal"
-        self.hero_title.setText("Stark Studio" if minimal else "♠ Stark Studio")
+        self.hero_title.setText("Otter Cove" if minimal else "♠ Otter Cove")
         # Sensitive-span handling is completed by step 48. The preference is
         # retained here so existing/future message widgets can react live without
         # changing the underlying session content.

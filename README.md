@@ -1,6 +1,6 @@
-# Stark Studio — PySide6 GUI concept
+# Otter Cove — PySide6 GUI concept
 
-GUI-first PySide6 reconstruction of the supplied Stark Studio HTML/JS/CSS interface for Fedora 44. External model/network integrations remain behind service boundaries while the desktop GUI and local application behavior are reconstructed.
+GUI-first PySide6 desktop application concept for Otter Cove on Fedora 44. External model/network integrations remain behind service boundaries while the desktop GUI and local application behavior are developed.
 
 ## Returning to the project
 
@@ -61,12 +61,12 @@ Work follows the numbered acceptance plan. Phase A has completed target acceptan
 - JSON export is written atomically; reset/import use SQLite transactions and return explicit affected/excluded-data reports.
 - Corrupt/unavailable stores report recovery options and are never silently deleted/replaced.
 
-Default Fedora data location is `$XDG_DATA_HOME/stark-studio/stark-studio.sqlite3`, or `~/.local/share/stark-studio/stark-studio.sqlite3` when `XDG_DATA_HOME` is unset. For an isolated demo run, set `STARK_STUDIO_DATA_DIR` to a temporary directory.
+Default Fedora data location is `$XDG_DATA_HOME/otter-cove/otter-cove.sqlite3`, or `~/.local/share/otter-cove/otter-cove.sqlite3` when `XDG_DATA_HOME` is unset. For an isolated demo run, set `OTTER_COVE_DATA_DIR` to a temporary directory.
 
 ## Project structure
 
 ```text
-stark_studio_pyside6/
+otter_cove_pyside6/
   README.md
   PLAN.md
   ROADMAP.md
@@ -141,7 +141,7 @@ Project governance and evidence are documented in [PLAN.md](PLAN.md), [STATUS.md
 
 ```bash
 sudo dnf install python3-pyside6
-cd stark_studio_pyside6
+cd otter_cove_pyside6
 python3 main.py
 ```
 
@@ -149,8 +149,8 @@ For an isolated acceptance run:
 
 ```bash
 DEMO_DIR="$(mktemp -d)"
-STARK_STUDIO_DATA_DIR="$DEMO_DIR/data" \
-STARK_STUDIO_SETTINGS_PATH="$DEMO_DIR/settings.ini" python3 main.py
+OTTER_COVE_DATA_DIR="$DEMO_DIR/data" \
+OTTER_COVE_SETTINGS_PATH="$DEMO_DIR/settings.ini" python3 main.py
 ```
 
 ## Tests
@@ -175,7 +175,7 @@ The script runs the same suite and prints the deferred native/manual checklist.
 For development/acceptance, an unfinished feature window can be forced into a deterministic shared state:
 
 ```bash
-STARK_STUDIO_DEMO_SCENARIO=failure python3 main.py
+OTTER_COVE_DEMO_SCENARIO=failure python3 main.py
 ```
 
-Valid values are `success`, `empty`, `loading`, `failure`, and `cancellation`. To expose an interactive fixture selector inside unfinished feature windows, set `STARK_STUDIO_SHOW_STATE_FIXTURES=1`.
+Valid values are `success`, `empty`, `loading`, `failure`, and `cancellation`. To expose an interactive fixture selector inside unfinished feature windows, set `OTTER_COVE_SHOW_STATE_FIXTURES=1`.

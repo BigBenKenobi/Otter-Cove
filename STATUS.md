@@ -1,6 +1,6 @@
 # Status
 
-Updated 21 September 2026. Start here when returning to the project.
+Updated 22 September 2026. Start here when returning to the project.
 
 **Current focus:** finish and verify Phase A foundations; correct the GUI review
 findings before expanding into new feature modules.
@@ -15,14 +15,17 @@ when submission/storage fails, then verify successful retry adds only one messag
 - Appearance settings and shortcut editing. Most product workspaces remain scaffolds.
 - Steps 01/53 have scoped prior acceptance; this is not full release acceptance.
 
-## Latest recorded verification
+## Latest verification
 
-The 21 September GUI review ran **65/65 tests with no skips** and the GUI smoke
-check successfully on Fedora 44, Python 3.14.7, PySide6/Qt 6.11.2, **offscreen**.
-Native pointer/dialog/scaling checks and animation performance remain pending.
-These are recorded review results; a repeat consolidation check also passed 65/65 and smoke offscreen; no
-application fixes were made. Durable logs and source hashes are in
-[the acceptance record](docs/acceptance/2026-09-21-offscreen.md); test commands are in [docs/TESTING.md](docs/TESTING.md).
+On 22 September, the Otter Cove rename workspace passed **67/67 tests with no
+skips**, plus the offscreen GUI smoke check. The run also verified the new package
+metadata and clean Otter Cove storage/export identifiers. It used isolated
+temporary storage; it is automated verification, not desktop release acceptance.
+
+The 21 September **65/65** Fedora offscreen record remains historical evidence for
+the pre-rename source snapshot. Its durable logs and source hashes remain in
+[the acceptance record](docs/acceptance/2026-09-21-offscreen.md). Native
+pointer/dialog/scaling checks and animation performance are still pending.
 
 ## Known open issues, in priority order
 
@@ -36,14 +39,16 @@ application fixes were made. Durable logs and source hashes are in
 
 - [PLAN.md](PLAN.md): sole current scope, implementation and acceptance plan.
 - [ROADMAP.md](ROADMAP.md): sequence; [docs/acceptance/](docs/acceptance/): new evidence.
-- Run commands from `stark_studio_pyside6/`; use isolated data/settings for checks.
+- [AGENTS.md](AGENTS.md): mandatory documentation standard for all new or materially modified code.
+- Run commands from `otter_cove_pyside6/`; use isolated data/settings for checks.
 - Retired files under `docs/archive/` and workspace `Version History/` are historical.
 - Update this file after meaningful implementation/verification; retain the difference
   between implemented, automatically checked and manually accepted.
 
-## Verified baseline identity
+## Repository and baseline identity
 
-No Git repository/HEAD is available, so **commit/tag: unavailable**. The passing
-automated snapshot is identified by the [source manifest](docs/acceptance/evidence/2026-09-21-offscreen/source-manifest.json).
-Do not label it a complete known-good GUI release; the issues above are unresolved.
-Milestone tagging awaits an actual committed and appropriately verified baseline.
+This project is a Git repository on `main` and tracks `origin/main` at
+`BigBenKenobi/Otter-Cove`. The 22 September automated Otter Cove verification is
+current workspace evidence; it is not a tagged release baseline. Do not label the
+application a complete known-good GUI release while the issues above and native
+desktop acceptance remain unresolved.

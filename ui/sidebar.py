@@ -101,7 +101,7 @@ class Sidebar(QFrame):
         self.menu_button.setText("☰")
         self.menu_button.setCursor(Qt.PointingHandCursor)
         self.menu_button.clicked.connect(self.toggle_collapsed)
-        self.brand = QLabel("Stark Studio")
+        self.brand = QLabel("Otter Cove")
         self.brand.setObjectName("Brand")
         head.addWidget(self.menu_button)
         head.addStretch()

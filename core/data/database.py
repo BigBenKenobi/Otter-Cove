@@ -10,7 +10,7 @@ from .migrations import MIGRATIONS, SCHEMA_VERSION
 
 _RECOVERY_OPTIONS = (
     "Make a backup copy of the database file before changing anything.",
-    "Restore a previously exported Stark Studio local-data JSON file.",
+    "Restore a previously exported Otter Cove local-data JSON file.",
     "Move the database aside manually and start a new store only if you accept losing local content from the active store.",
 )
 
@@ -54,7 +54,7 @@ class SQLiteStore:
             "malformed" in text or "not a database" in text or "file is encrypted" in text
         ) else DataStoreUnavailableError
         return error_cls(
-            f"Stark Studio could not open its local-data store: {exc}",
+            f"Otter Cove could not open its local-data store: {exc}",
             path=self.path,
             recovery_options=_RECOVERY_OPTIONS,
         )
@@ -82,7 +82,7 @@ class SQLiteStore:
             raise DataMigrationError(
                 f"Local-data schema {current} is newer than this build supports ({SCHEMA_VERSION}).",
                 path=self.path,
-                recovery_options=("Open the store with a newer compatible Stark Studio build.",),
+                recovery_options=("Open the store with a newer compatible Otter Cove build.",),
             )
         for migration in MIGRATIONS:
             if migration.version <= current:
