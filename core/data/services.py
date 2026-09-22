@@ -204,6 +204,15 @@ class GalleryService:
 
 
 class LocalDataService:
+    """Own the versioned, credential-safe local-data import/export boundary.
+
+    ``AppDataServices`` constructs this coordinator around the same repositories
+    used by the GUI.  It snapshots only the durable tables listed below, keeping
+    Nobody sessions and QSettings outside exports.  Import validation happens
+    before replacement where possible, while the SQLite transaction guarantees
+    malformed rows cannot partially erase a user's current local content.
+    """
+
     TABLES = (
         "sessions",
         "messages",
@@ -214,6 +223,20 @@ class LocalDataService:
         "tasks",
         "gallery_items",
     )
+
+    # Every exported row must retain these stable identity/lifecycle fields. The
+    # repository APIs use direct lookups for them, so checking before replacement
+    # turns a hand-edited or truncated export into actionable recovery feedback.
+    REQUIRED_FIELDS = {
+        "sessions": ("id", "created_at", "updated_at"),
+        "messages": ("id", "session_id", "role", "content", "created_at", "ordinal"),
+        "models": ("id", "name", "provider", "created_at", "updated_at"),
+        "documents": ("id", "title", "created_at", "updated_at"),
+        "brain_items": ("id", "kind", "title", "content", "created_at", "updated_at"),
+        "notes": ("id", "title", "created_at", "updated_at"),
+        "tasks": ("id", "title", "created_at", "updated_at"),
+        "gallery_items": ("id", "path", "created_at", "updated_at"),
+    }
 
     def __init__(
         self,
@@ -226,6 +249,14 @@ class LocalDataService:
         tasks: TaskRepository,
         gallery: GalleryRepository,
     ) -> None:
+        """Retain the shared store and repositories used for durable transfers.
+
+        The service deliberately receives repository instances instead of opening
+        another database connection.  Import can therefore run every table write
+        within the caller's one SQLite transaction and leave all prior content
+        intact when any record is rejected.
+        """
+
         self.store = store
         self.sessions = sessions
         self.models = models
@@ -236,6 +267,13 @@ class LocalDataService:
         self.gallery = gallery
 
     def snapshot(self) -> dict[str, Any]:
+        """Return the complete credential-free durable-data export payload.
+
+        Rows are read directly from the versioned SQLite tables to preserve stable
+        IDs and timestamps for a later import.  The persistence policy check is a
+        final guard: an unsafe record is never serialized as a local-data export.
+        """
+
         conn = self.store.connection
         content: dict[str, list[dict[str, Any]]] = {}
         for table in self.TABLES:
@@ -252,6 +290,13 @@ class LocalDataService:
         return payload
 
     def export_json(self, path: str | Path) -> DataOperationReport:
+        """Atomically serialize :meth:`snapshot` to ``path`` and report its scope.
+
+        The temporary sibling file is flushed before ``os.replace`` publishes it,
+        so a failed export leaves a pre-existing destination untouched.  Filesystem
+        errors intentionally propagate to the shell, which owns user feedback.
+        """
+
         target = Path(path).expanduser().resolve()
         target.parent.mkdir(parents=True, exist_ok=True)
         payload = self.snapshot()
@@ -273,6 +318,16 @@ class LocalDataService:
         return DataOperationReport("export", str(target), counts, self.TABLES)
 
     def import_json(self, path: str | Path, *, replace: bool = True) -> DataOperationReport:
+        """Validate then transactionally import a versioned local-data snapshot.
+
+        ``replace`` clears supported durable tables only inside the transaction;
+        invalid roots, missing row fields, nested JSON, conversion failures, and
+        constraint violations leave existing local content unchanged.  Expected
+        malformed-file failures are normalized to :class:`DataValidationError` so
+        the Settings shell can show recovery feedback instead of leaking Python
+        parsing exceptions through a Qt signal handler.
+        """
+
         source = Path(path).expanduser().resolve()
         try:
             payload = json.loads(source.read_text(encoding="utf-8"))
@@ -280,18 +335,33 @@ class LocalDataService:
             raise DataValidationError(f"Cannot read Otter Cove data export: {exc}") from exc
         self._validate_import(payload)
         content = payload["content"]
+        self._validate_row_shapes(content)
         counts = {table: len(content.get(table, [])) for table in self.TABLES}
         try:
+            # Replacement is deliberately deferred until every structural check
+            # above has passed. Any semantic failure below rolls back this scope.
             with self.store.transaction() as conn:
                 if replace:
                     for table in reversed(self.TABLES):
                         conn.execute(f"DELETE FROM {table}")
                 self._import_rows(content, conn)
+        except DataValidationError:
+            raise
         except sqlite3.IntegrityError as exc:
             raise DataValidationError(f"Import violates the local-data schema: {exc}") from exc
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise DataValidationError(
+                f"Import contains malformed record values: {exc}"
+            ) from exc
         return DataOperationReport("import", str(source), counts, self.TABLES)
 
     def reset_local_content(self) -> DataOperationReport:
+        """Transactionally delete exportable durable content and report row counts.
+
+        Preferences, geometry, credentials, and process-local Nobody records never
+        belong to ``TABLES`` and are therefore intentionally outside this reset.
+        """
+
         before = {table: int(self.store.connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]) for table in self.TABLES}
         with self.store.transaction() as conn:
             for table in reversed(self.TABLES):
@@ -299,6 +369,13 @@ class LocalDataService:
         return DataOperationReport("reset", None, before, self.TABLES)
 
     def _validate_import(self, payload: Any) -> None:
+        """Reject an incompatible root, table collection, or credential-like data.
+
+        This phase validates the versioned envelope before reading individual rows.
+        Row-shape and nested-JSON checks follow separately because they need the
+        table names to produce specific recovery messages.
+        """
+
         if not isinstance(payload, dict):
             raise DataValidationError("Import root must be a JSON object.")
         if payload.get("format") != EXPORT_FORMAT:
@@ -312,8 +389,27 @@ class LocalDataService:
             raise DataValidationError(f"Export contains unsupported content tables: {', '.join(sorted(unknown))}")
         assert_no_credentials(payload, path="import")
 
+    def _validate_row_shapes(self, content: dict[str, Any]) -> None:
+        """Require the repository fields needed by every imported record.
+
+        Missing keys previously escaped as ``KeyError`` after the transaction had
+        started.  This preflight keeps the database untouched and names the exact
+        table, row, and omitted fields for the Settings recovery surface.
+        """
+
+        for table in self.TABLES:
+            for index, row in enumerate(self._rows(content, table)):
+                missing = [field for field in self.REQUIRED_FIELDS[table] if field not in row]
+                if missing:
+                    raise DataValidationError(
+                        f"Cannot import {table}[{index}]: missing required fields "
+                        f"{', '.join(missing)}."
+                    )
+
     @staticmethod
     def _rows(content: dict[str, Any], table: str) -> list[dict[str, Any]]:
+        """Return one table's object rows or reject an invalid table shape."""
+
         rows = content.get(table, [])
         if not isinstance(rows, list) or not all(isinstance(row, dict) for row in rows):
             raise DataValidationError(f"Import table '{table}' must be a list of objects.")
@@ -350,6 +446,13 @@ class LocalDataService:
         return value
 
     def _import_rows(self, content: dict[str, Any], conn) -> None:
+        """Write validated rows in foreign-key order within the active transaction.
+
+        Parent sessions precede their messages; all other repository writes retain
+        their exported IDs.  Callers must run the envelope and row-shape preflight
+        first, but nested field and value conversion checks remain defensive here.
+        """
+
         # Parent records first. Repository create methods preserve IDs and validate metadata.
         for row in self._rows(content, "sessions"):
             self.sessions.create(

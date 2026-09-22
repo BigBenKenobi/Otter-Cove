@@ -151,6 +151,18 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertIn("nested JSON is malformed", panel.data_result.text())
         self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
 
+        missing_field = Path(self.tmp.name) / "missing-required-field.json"
+        payload = self.data.local_data.snapshot()
+        del payload["content"]["sessions"][0]["id"]
+        missing_field.write_text(json.dumps(payload), encoding="utf-8")
+        with (
+            patch("app.QFileDialog.getOpenFileName", return_value=(str(missing_field), "JSON")),
+            patch("app.QMessageBox.question", return_value=QMessageBox.Yes),
+        ):
+            self.window._import_local_data()
+        self.assertIn("missing required fields id", panel.data_result.text())
+        self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
+
         with patch("app.QMessageBox.warning", return_value=QMessageBox.No):
             self.window._reset_local_data()
         self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
