@@ -33,7 +33,7 @@ class ShellQtAcceptanceTests(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         root = Path(self.tempdir.name)
         self.settings = AppSettings(root / "settings.ini")
-        self.data = AppDataServices.open(root / "stark.sqlite3")
+        self.data = AppDataServices.open(root / "otter-cove.sqlite3")
         self.window = MainWindow(self.data, self.settings)
         self.window.show()
         self.app.processEvents()
@@ -101,7 +101,7 @@ class ShellQtAcceptanceTests(unittest.TestCase):
 
         root = Path(self.tempdir.name)
         self.settings = AppSettings(root / "settings.ini")
-        self.data = AppDataServices.open(root / "stark.sqlite3")
+        self.data = AppDataServices.open(root / "otter-cove.sqlite3")
         self.window = MainWindow(self.data, self.settings)
         self.window.show()
         self.app.processEvents()

@@ -2,7 +2,7 @@
 set -u
 cd "$(dirname "$0")/.."
 
-echo "=== Stark Studio Phase A Fedora check ==="
+echo "=== Otter Cove Phase A Fedora check ==="
 echo "Date: $(date -Is 2>/dev/null || date)"
 echo "Python: $(python3 --version 2>&1)"
 python3 - <<'PY'

@@ -1,14 +1,14 @@
-# STARK STUDIO — CURRENT GUI PLAN AND IMPLEMENTATION INSTRUCTIONS
+# OTTER COVE — CURRENT GUI PLAN AND IMPLEMENTATION INSTRUCTIONS
 
 Progress review: 21 September 2026 (supersedes the earlier same-day baseline)
 Target: Fedora 44 desktop, PySide6 / Qt Widgets
-Authoritative current plan: PLAN.md in stark_studio_pyside6/
+Authoritative current plan: PLAN.md in otter_cove_pyside6/
 
 ## DOCUMENT OWNERSHIP AND PROVENANCE
 
 This is the sole current implementation and acceptance plan. It adopts the
 21 September GUI progress review formerly stored in the workspace-root Plan.
-The application directory is now stark_studio_pyside6 (formerly Current Build).
+The application directory is now otter_cove_pyside6 (formerly Current Build).
 All application-relative paths below refer to this directory unless stated otherwise.
 
 - PLAN.md owns scope, feature IDs, dependencies and acceptance conditions.
@@ -36,7 +36,7 @@ implemented slice, not all planned workflows.
 Environment: Fedora Linux 44 (KDE Plasma Desktop Edition); Python 3.14.7;
 PySide6 6.11.2 / Qt 6.11.2. Execution platform: offscreen.
 
-Commands were run before directory renaming; run from stark_studio_pyside6 now:
+Commands were run before directory renaming; run from otter_cove_pyside6 now:
   PYTHONDONTWRITEBYTECODE=1 QT_QPA_PLATFORM=offscreen PYTHONPATH=. \
     python3 -m unittest discover -s tests -v
 Result: 65 tests run, 65 passed, no skips or failures (0.608 seconds).
@@ -56,14 +56,14 @@ to 1100×800, and minimum-size captures were 1100×680. Captures are not native
 window-manager or fractional-scale evidence.
 
 Temporary evidence (not permanent project deliverables):
-- /tmp/stark-progress-tests.log
-- /tmp/stark-progress-smoke.log
-- /tmp/stark-progress-home-1720.png
-- /tmp/stark-progress-custom.png
-- /tmp/stark-progress-settings.png and /tmp/stark-progress-shortcuts.png
-- /tmp/stark-progress-minimum-large.png and /tmp/stark-progress-collapsed.png
-- /tmp/stark-progress-inspect.py (probe source)
-- /tmp/stark-progress-before.json (130-file Current Build hash inventory)
+- /tmp/otter-cove-progress-tests.log
+- /tmp/otter-cove-progress-smoke.log
+- /tmp/otter-cove-progress-home-1720.png
+- /tmp/otter-cove-progress-custom.png
+- /tmp/otter-cove-progress-settings.png and /tmp/otter-cove-progress-shortcuts.png
+- /tmp/otter-cove-progress-minimum-large.png and /tmp/otter-cove-progress-collapsed.png
+- /tmp/otter-cove-progress-inspect.py (probe source)
+- /tmp/otter-cove-progress-before.json (130-file Current Build hash inventory)
 Inventory digest: 87c070c48455e396714eb468e815e43830d86cda4e50140c76ef6ed7d1d25469
 These paths are temporary; rerun and archive evidence during a later authorized
 acceptance pass. The observations and results are recorded here for durability.

@@ -20,7 +20,7 @@ class DataStoreError(RuntimeError):
             lines.append("Recovery options:")
             lines.extend(f"• {option}" for option in self.recovery_options)
         lines.append("")
-        lines.append("Stark Studio will not delete or replace this store automatically.")
+        lines.append("Otter Cove will not delete or replace this store automatically.")
         return "\n".join(lines)
 
 

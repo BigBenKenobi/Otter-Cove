@@ -18,7 +18,7 @@ class EffectSettings:
 
 
 class BackgroundEffect:
-    """Base contract for a Stark Studio animated background effect.
+    """Base contract for an Otter Cove animated background effect.
 
     Effects own their particles/state.  The manager owns timing.  This keeps the
     main window and canvas completely unaware of effect-specific behaviour.

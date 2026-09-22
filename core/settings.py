@@ -18,10 +18,10 @@ class AppSettings:
 
     def __init__(self, ini_path: str | Path | None = None) -> None:
         if ini_path is None:
-            override = os.environ.get("STARK_STUDIO_SETTINGS_PATH")
+            override = os.environ.get("OTTER_COVE_SETTINGS_PATH")
             ini_path = Path(override).expanduser() if override else None
         if ini_path is None:
-            self._settings = QSettings("Stark Studio", "Stark Studio")
+            self._settings = QSettings("Otter Cove", "Otter Cove")
         else:
             path = Path(ini_path).expanduser()
             path.parent.mkdir(parents=True, exist_ok=True)

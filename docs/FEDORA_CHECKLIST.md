@@ -6,7 +6,7 @@ When you are back at the Fedora machine, start with one command from the project
 ./scripts/fedora_phase_a_check.sh
 ```
 
-It records the Fedora/desktop/session/PySide6/Qt/GPU context, runs the full automated test suite, runs an isolated native-Qt smoke pass, and then prints the manual checks below. The smoke pass uses a temporary database and settings file; it does **not** modify your normal Stark Studio data.
+It records the Fedora/desktop/session/PySide6/Qt/GPU context, runs the full automated test suite, runs an isolated native-Qt smoke pass, and then prints the manual checks below. The smoke pass uses a temporary database and settings file; it does **not** modify your normal Otter Cove data.
 
 ## Manual checks to batch
 

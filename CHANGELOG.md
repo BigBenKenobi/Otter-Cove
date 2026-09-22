@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Stark Studio are documented here.
+All notable changes to Otter Cove are documented here.
 
 ## Unreleased
 

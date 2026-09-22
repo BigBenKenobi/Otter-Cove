@@ -1,4 +1,4 @@
-"""Minimal executable bootstrap for the Stark Studio desktop application.
+"""Minimal executable bootstrap for the Otter Cove desktop application.
 
 Application composition belongs in :mod:`app`; keeping this module narrowly
 focused on Qt process setup makes startup failure handling explicit and lets tests
@@ -28,8 +28,8 @@ def main() -> None:
     # These values identify the application to Qt and its platform integrations,
     # while Fusion supplies a stable cross-desktop widget baseline for this concept.
     app = QApplication(sys.argv)
-    app.setApplicationName("Stark Studio")
-    app.setOrganizationName("Stark Studio")
+    app.setApplicationName("Otter Cove")
+    app.setOrganizationName("Otter Cove")
     app.setStyle("Fusion")
     # Start with a deterministic system monospace default.  ThemeManager may apply
     # the user's saved font/size afterward while MainWindow is being composed.
@@ -41,7 +41,7 @@ def main() -> None:
         # Local content cannot safely be used when its store fails to open.  The
         # service provides a user-oriented message; exit code 2 distinguishes this
         # known initialization failure from ordinary event-loop termination.
-        QMessageBox.critical(None, "Stark Studio local data", exc.user_message())
+        QMessageBox.critical(None, "Otter Cove local data", exc.user_message())
         raise SystemExit(2)
 
     # ``exec`` owns the GUI loop until the user closes the shell.  Raising

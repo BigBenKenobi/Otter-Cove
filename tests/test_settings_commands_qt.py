@@ -32,7 +32,7 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
         self.settings = AppSettings(root / "settings.ini")
-        self.data = AppDataServices.open(root / "stark.sqlite3")
+        self.data = AppDataServices.open(root / "otter-cove.sqlite3")
         self.window = MainWindow(self.data, self.settings)
         self.window.show()
         self.app.processEvents()
@@ -65,7 +65,7 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertGreater(chat.prompt.maximumWidth(), normal_max)
         self.assertFalse(chat.hero_title.isVisible())
         self.assertFalse(chat.prompt.search_button.isVisible())
-        self.assertEqual(chat.hero_title.text(), "Stark Studio")
+        self.assertEqual(chat.hero_title.text(), "Otter Cove")
         self.assertFalse(self.window.sidebar.buttons["email"].isVisible())
 
     def test_new_chat_and_settings_commands_remain_available_when_navigation_entries_hidden(self) -> None:
@@ -93,7 +93,7 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         from core.settings import AppSettings
         root = Path(self.tmp.name)
         self.settings = AppSettings(root / "settings.ini")
-        self.data = AppDataServices.open(root / "stark.sqlite3")
+        self.data = AppDataServices.open(root / "otter-cove.sqlite3")
         self.window = MainWindow(self.data, self.settings)
         self.window.show()
         self.app.processEvents()
@@ -116,7 +116,7 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         from core.settings import AppSettings
         root = Path(self.tmp.name)
         self.settings = AppSettings(root / "settings.ini")
-        self.data = AppDataServices.open(root / "stark.sqlite3")
+        self.data = AppDataServices.open(root / "otter-cove.sqlite3")
         self.window = MainWindow(self.data, self.settings)
         self.window.show()
         self.app.processEvents()

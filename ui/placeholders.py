@@ -15,7 +15,7 @@ class FeaturePlaceholder(QWidget):
 
     The ordinary build shows a module-specific shared empty/unavailable state. A
     deterministic state fixture can be enabled for acceptance work with either the
-    ``demo_scenario`` constructor argument or STARK_STUDIO_DEMO_SCENARIO.
+    ``demo_scenario`` constructor argument or OTTER_COVE_DEMO_SCENARIO.
     """
 
     def __init__(
@@ -32,7 +32,7 @@ class FeaturePlaceholder(QWidget):
         spec = registry.get(route)
         if spec is None:
             title = route.replace("_", " ").title() or "Unknown route"
-            plan = "This route is not registered in this Stark Studio build."
+            plan = "This route is not registered in this Otter Cove build."
         else:
             title = spec.title
             plan = spec.description or "This feature has no implementation notes yet."
@@ -70,15 +70,15 @@ class FeaturePlaceholder(QWidget):
         self.state_host.set_state(
             EmptyState(
                 f"{title} is not wired yet",
-                "The route and shared Stark Studio window shell are working. The dedicated feature milestone has not been implemented, and opening this window does not disturb the current chat session or composer draft.",
+                "The route and shared Otter Cove window shell are working. The dedicated feature milestone has not been implemented, and opening this window does not disturb the current chat session or composer draft.",
             ),
             announce=False,
         )
 
         # Optional deterministic fixture UI for acceptance/development builds.
         self.demo_host: DemoStateHost | None = None
-        scenario_value = demo_scenario or os.environ.get("STARK_STUDIO_DEMO_SCENARIO", "").strip()
-        show_controls = os.environ.get("STARK_STUDIO_SHOW_STATE_FIXTURES", "0") == "1"
+        scenario_value = demo_scenario or os.environ.get("OTTER_COVE_DEMO_SCENARIO", "").strip()
+        show_controls = os.environ.get("OTTER_COVE_SHOW_STATE_FIXTURES", "0") == "1"
         if scenario_value or show_controls:
             self.demo_host = DemoStateHost(title, feedback=feedback)
             root.addWidget(self.demo_host)

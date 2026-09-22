@@ -81,7 +81,7 @@ class ThemeLogicTests(unittest.TestCase):
         self.assertEqual(bundle["effect"]["name"], "Leaves")
 
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "theme.starktheme.json"
+            path = Path(tmp) / "theme.ottercove.json"
             save_theme_bundle_atomic(path, bundle)
             loaded = load_theme_bundle(path)
         self.assertEqual(loaded, bundle)

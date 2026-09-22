@@ -2,7 +2,7 @@
 """Deterministic native Qt smoke pass for the deferred Phase A batch.
 
 Uses isolated temporary SQLite/QSettings storage and does not modify the user's
-normal Stark Studio profile. Run from the project root on Fedora/Wayland.
+normal Otter Cove profile. Run from the project root on Fedora/Wayland.
 """
 from __future__ import annotations
 
@@ -36,10 +36,10 @@ def main() -> int:
     app = QApplication.instance() or QApplication([])
     app.setQuitOnLastWindowClosed(False)
 
-    with tempfile.TemporaryDirectory(prefix="stark-phase-a-smoke-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="otter-cove-phase-a-smoke-") as tmp:
         root = Path(tmp)
         settings_path = root / "settings.ini"
-        db_path = root / "stark.sqlite3"
+        db_path = root / "otter-cove.sqlite3"
         settings = AppSettings(settings_path)
         data = AppDataServices.open(db_path)
         window = MainWindow(data, settings)

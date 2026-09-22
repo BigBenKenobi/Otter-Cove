@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from core.data import (
     AppDataServices,
@@ -15,13 +17,14 @@ from core.data import (
     SQLiteStore,
 )
 from core.data.migrations import SCHEMA_VERSION
+from core.data.services import EXPORT_FORMAT, default_data_dir, default_database_path
 
 
 class PersistenceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()
         self.root = Path(self.tempdir.name)
-        self.db_path = self.root / "stark.sqlite3"
+        self.db_path = self.root / "otter-cove.sqlite3"
 
     def tearDown(self) -> None:
         self.tempdir.cleanup()
@@ -91,6 +94,7 @@ class PersistenceTests(unittest.TestCase):
         self.assertTrue(export_path.exists())
         self.assertEqual(report.counts["sessions"], 1)
         self.assertIn("credentials", report.excluded)
+        self.assertEqual(json.loads(export_path.read_text(encoding="utf-8"))["format"], EXPORT_FORMAT)
 
         reset = services.local_data.reset_local_content()
         self.assertEqual(reset.operation, "reset")
@@ -101,6 +105,36 @@ class PersistenceTests(unittest.TestCase):
         self.assertEqual(imported.operation, "import")
         self.assertEqual(services.sessions.get_persistent_session(session.id).id, session.id)
         self.assertEqual(services.notes.list()[0].id, note.id)
+        services.close()
+
+    def test_otter_cove_default_paths_and_override(self) -> None:
+        xdg_root = self.root / "xdg"
+        otter_root = self.root / "otter"
+
+        with patch.dict(os.environ, {"XDG_DATA_HOME": str(xdg_root)}, clear=True):
+            self.assertEqual(default_data_dir(), xdg_root / "otter-cove")
+            self.assertEqual(default_database_path(), xdg_root / "otter-cove" / "otter-cove.sqlite3")
+
+        with patch.dict(
+            os.environ,
+            {
+                "XDG_DATA_HOME": str(xdg_root),
+                "OTTER_COVE_DATA_DIR": str(otter_root),
+            },
+            clear=True,
+        ):
+            self.assertEqual(default_database_path(), otter_root / "otter-cove.sqlite3")
+
+    def test_non_current_export_marker_is_rejected(self) -> None:
+        services = AppDataServices.open(self.db_path)
+        rejected_export = self.root / "rejected-export.json"
+        payload = services.local_data.snapshot()
+        self.assertEqual(payload["format"], EXPORT_FORMAT)
+        payload["format"] = "previous-product-local-data"
+        rejected_export.write_text(json.dumps(payload), encoding="utf-8")
+
+        with self.assertRaisesRegex(DataValidationError, "Otter Cove"):
+            services.local_data.import_json(rejected_export)
         services.close()
 
     def test_v1_fixture_migrates_to_v2_without_losing_rows(self) -> None:
@@ -139,7 +173,7 @@ class PersistenceTests(unittest.TestCase):
     def test_unavailable_store_reports_recovery_without_creating_replacement(self) -> None:
         blocked_parent = self.root / "not-a-directory"
         blocked_parent.write_text("block", encoding="utf-8")
-        requested = blocked_parent / "stark.sqlite3"
+        requested = blocked_parent / "otter-cove.sqlite3"
         with self.assertRaises(DataStoreUnavailableError) as caught:
             SQLiteStore(requested)
         self.assertTrue(caught.exception.recovery_options)
