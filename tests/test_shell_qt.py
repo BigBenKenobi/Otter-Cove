@@ -1,9 +1,18 @@
+"""Qt acceptance coverage for shell routing, layout, and composer integrity.
+
+The tests construct the real ``MainWindow`` with isolated settings and SQLite
+storage.  They exercise presentation-to-service boundaries offscreen so routing,
+geometry, draft retention, and successful persistence remain regression-tested
+without touching a user's desktop profile.
+"""
+
 from __future__ import annotations
 
 import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -17,6 +26,8 @@ except ModuleNotFoundError:
 
 @unittest.skipUnless(HAS_QT, "PySide6 is required for shell acceptance tests")
 class ShellQtAcceptanceTests(unittest.TestCase):
+    """Exercise shell behavior through real widgets and isolated local services."""
+
     @classmethod
     def setUpClass(cls) -> None:
         if not HAS_QT:
@@ -56,6 +67,43 @@ class ShellQtAcceptanceTests(unittest.TestCase):
         self.assertEqual(chat.session_id, session_before)
         self.assertIn("email", self.window.window_manager.windows)
         self.assertTrue(self.window.window_manager.windows["email"].isVisible())
+
+    def test_failed_send_preserves_complete_draft_and_retry_adds_one_message(self) -> None:
+        """A transient storage failure must leave one safe, lossless retry."""
+
+        from core.data import DataStoreUnavailableError
+
+        chat = self.window.workspace.chat
+        draft = "  first line\nsecond line with spacing  "
+        chat.set_draft_text(draft)
+        chat.prompt.chat_button.setChecked(True)
+
+        # Session creation is allowed to complete, then message persistence is
+        # failed at the service boundary to reproduce the reported data-loss path.
+        with patch.object(
+            chat.sessions,
+            "add_message",
+            side_effect=DataStoreUnavailableError("injected message-store failure"),
+        ):
+            chat.prompt.submit()
+        self.app.processEvents()
+
+        self.assertEqual(chat.draft_text(), draft)
+        self.assertEqual(chat.prompt.mode(), "Chat")
+        self.assertIsNotNone(chat.session_id)
+        self.assertEqual(chat.sessions.messages(chat.session_id), [])
+
+        # Retrying the same retained draft uses the already-created session.  A
+        # successful acceptance clears once and yields one durable/UI message.
+        chat.prompt.submit()
+        self.app.processEvents()
+
+        self.assertEqual(chat.draft_text(), "")
+        messages = chat.sessions.messages(chat.session_id)
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(messages[0].content, draft.strip())
+        self.assertEqual(messages[0].metadata["mode"], "Chat")
+        self.assertEqual(chat.message_layout.count(), 2)  # one message plus stretch
 
     def test_every_registered_route_resolves_to_command_or_window(self) -> None:
         for spec in self.window.route_registry:

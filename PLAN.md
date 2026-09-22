@@ -257,8 +257,8 @@ Done only when:
 ### 04. Chat composer
 
 Baseline: Partial
-Current check: Composer width adapts and Full-width works; height remains fixed at 96 with a 42-pixel editor limit. Submission only saves local user messages. Injected add_message failure clears the draft before reporting failure.
-Next implementation instruction: First clear input only after successful acceptance and preserve attachments/mode on failure. Then implement bounded autosizing, model/request records, cancellation and per-session drafts.
+Current check: Composer width adapts and Full-width works; height remains fixed at 96 with a 42-pixel editor limit. Submission only saves local user messages. Injected add_message failure now preserves the complete draft and selected mode; retry is covered to clear once and store one message.
+Next implementation instruction: Preserve future attachments through the same acceptance boundary. Then implement bounded autosizing, model/request records, cancellation and per-session drafts.
 Depends on: 5, 7, 8, 10, 50
 Deliverable: Reusable multiline composer with bounded autosizing, model selection, Agent/Chat mode and send state.
 Done only when:
