@@ -138,6 +138,10 @@ Sensitive blur is a stored widget property, not a sensitive-span renderer. Statu
 summary is a static label, not process presentation. Web Search routes to the
 conversation Search scaffold. Clearly explain/disable unavailable behavior until
 its actual consumer is implemented; do not imply protection or a working tool.
+Resolution: the current R1 branch removes the inert blur property, disables and
+labels sensitive blur, Web Search and Shell controls as unavailable, and renames
+the implemented summary control to Session storage status. Stored future defaults
+remain available to their eventual consumers without implying current behavior.
 
 No fixes were applied in this review. Passing the existing suite does not resolve
 these separately reproduced gaps.
@@ -837,9 +841,9 @@ Done only when:
 
 ### 47. Settings — Appearance
 
-Baseline: Partial
-Current check: Appearance controls persist and update existing UI, with passing reset/draft-preservation tests. Sensitive-span blur only sets a property, and status summaries are a static label rather than process rendering.
-Next implementation instruction: Retain working preferences. Mark dependent capabilities unavailable or accurately described until 48/49 supply behavior; do not present a checked blur control as actual protection.
+Baseline: Partial; unavailable capabilities labelled
+Current check: Working appearance controls persist and update existing UI, with passing reset/draft-preservation tests. Session storage status describes actual persistent/memory-only state. Sensitive blur, Web Search and Shell preferences remain stored for future consumers but their Settings/composer controls are disabled and visibly labelled unavailable; no inert blur property claims protection.
+Next implementation instruction: Enable dependent controls only when steps 08/48/49 supply observable behavior, then add their live/restart acceptance. Retain the accurate unavailable state until then.
 Depends on: 1, 32, 54
 Deliverable: Declarative live preferences for chat, composer, sidebar and presentation.
 Done only when:

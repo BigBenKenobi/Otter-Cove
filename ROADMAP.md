@@ -3,9 +3,9 @@
 Execution order only. [PLAN.md](PLAN.md) owns scope, dependencies and acceptance;
 [STATUS.md](STATUS.md) records current progress and evidence.
 
-**Next: R1 — preserve the draft when submission/storage fails (steps 04/10/54).**
-Then fix session-mode transitions, private-session disposal, draft ownership and
-large-text clipping. These targeted corrections precede expansion into new modules.
+**Next: R2 — finish foundation acceptance and local-data recovery UI.** R1's
+failed-send, session-mode, private-disposal, draft-ownership, scaled-control and
+unavailable-capability corrections have targeted tests; native checks remain.
 
 | Phase | Order / focus | Exit reference |
 |---|---|---|

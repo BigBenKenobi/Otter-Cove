@@ -1,3 +1,10 @@
+"""Qt acceptance tests for live Settings and canonical keyboard commands.
+
+The suite mounts the real shell with isolated settings/data, then verifies reuse,
+live preference propagation, persistence, conflict recovery, and honest disabled
+states for capabilities whose runtime consumers are not implemented.
+"""
+
 from __future__ import annotations
 
 import json
@@ -18,6 +25,8 @@ except ModuleNotFoundError:
 
 @unittest.skipUnless(HAS_QT, "PySide6 is required for Settings/command acceptance tests")
 class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
+    """Exercise Settings-to-shell behavior through real Qt controls."""
+
     @classmethod
     def setUpClass(cls) -> None:
         if HAS_QT:
@@ -74,6 +83,26 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertTrue(self.window.command_manager.actions["navigation.new_chat"].isEnabled())
         self.assertTrue(self.window.command_manager.actions["navigation.settings"].isEnabled())
         self.assertTrue(self.window.command_manager.binding("navigation.settings"))
+
+    def test_unimplemented_appearance_capabilities_are_labelled_and_disabled(self) -> None:
+        """Stored future preferences must not be presented as working features."""
+
+        self.window._route("settings")
+        self.app.processEvents()
+        panel = self.window.window_manager.windows["settings"].content_widget()
+
+        for key in ("sensitive_blur", "show_web_search", "show_shell"):
+            checkbox = panel.appearance_checks[key]
+            self.assertFalse(checkbox.isEnabled())
+            self.assertIn("unavailable", checkbox.text().casefold())
+            self.assertTrue(checkbox.toolTip())
+
+        chat = self.window.workspace.chat
+        self.assertFalse(chat.prompt.search_button.isEnabled())
+        self.assertIn("unavailable", chat.prompt.search_button.toolTip().casefold())
+        self.assertFalse(chat.prompt.shell_button.isEnabled())
+        self.assertIn("unavailable", chat.prompt.shell_button.toolTip().casefold())
+        self.assertIsNone(chat.property("sensitiveBlurEnabled"))
 
     def test_rebinding_persists_and_conflicts_do_not_replace_existing_binding(self) -> None:
         from core.command_registry import ShortcutConflict

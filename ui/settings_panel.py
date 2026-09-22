@@ -1,3 +1,11 @@
+"""Reusable Settings window pages for appearance and keyboard commands.
+
+The panel edits declarative preferences and command bindings supplied by the
+application shell. Controls whose runtime consumers do not exist yet remain
+visible but disabled with an explicit reason, so stored future configuration is
+not presented as working protection, search, or shell functionality.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
@@ -92,6 +100,8 @@ class SettingsPanel(QFrame):
         return scroll, host, layout
 
     def _build_appearance(self, appearance: Mapping[str, object], sidebar_routes: Sequence[RouteSpec]) -> QScrollArea:
+        """Build live appearance controls and label unavailable capabilities."""
+
         scroll, _host, root = self._scroll_page()
 
         chat = Section("Chat & composer", "◌")
@@ -100,17 +110,24 @@ class SettingsPanel(QFrame):
             ("Full-width composer", "full_width", "Allow the composer to use the available chat width."),
             ("Show welcome", "show_welcome", "Show the Otter Cove welcome copy on an empty chat."),
             ("Show Nobody", "show_nobody", "Show the ephemeral Nobody control. Hiding it does not change an active session."),
-            ("Status summaries", "show_status_summaries", "Show the local GUI/session status summary."),
+            ("Session storage status", "show_status_summaries", "Show whether the selected session uses persistent or memory-only storage."),
             ("Sensitive-span blur", "sensitive_blur", "Preference used by explicitly marked demo spans; general secret detection is not implied."),
             ("Web Search action", "show_web_search", "Show Web Search beneath the composer."),
             ("Shell action", "show_shell", "Show Shell access beneath the composer."),
         ]
+        unavailable = {
+            "sensitive_blur": "Unavailable until sensitive-span rendering is implemented; this setting does not currently protect content.",
+            "show_web_search": "Unavailable until a web-search action exists; conversation Search is a separate feature.",
+            "show_shell": "Unavailable until the composer has a bounded shell action; no command execution is connected.",
+        }
         self.appearance_checks: dict[str, QCheckBox] = {}
         for row, (label, key, tooltip) in enumerate(checks):
-            checkbox = QCheckBox(label)
+            reason = unavailable.get(key)
+            checkbox = QCheckBox(f"{label} (unavailable)" if reason else label)
             checkbox.setChecked(bool(appearance.get(key, False)))
-            checkbox.setToolTip(tooltip)
-            checkbox.setAccessibleName(label)
+            checkbox.setToolTip(reason or tooltip)
+            checkbox.setAccessibleName(f"{label}, unavailable" if reason else label)
+            checkbox.setEnabled(reason is None)
             checkbox.toggled.connect(lambda value, k=key: self.appearanceChanged.emit({k: bool(value)}))
             self.appearance_checks[key] = checkbox
             grid.addWidget(checkbox, row, 0, 1, 2)
