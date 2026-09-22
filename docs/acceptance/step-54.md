@@ -2,9 +2,9 @@
 
 - **Step:** 54
 - **Status:** In progress; not marked Done
-- **Build:** step54-foundation-1
-- **Date:** 2026-09-21
-- **Environment used for automated checks:** Linux build container, Python 3; PySide6 unavailable in this container
+- **Build:** stacked R2 local-data-management update
+- **Date:** 2026-09-22
+- **Environment used for current automated checks:** Linux build container, PySide6 offscreen
 - **Storage fixture:** isolated `tempfile.TemporaryDirectory()` per test
 
 ## Implemented in this build
@@ -17,14 +17,17 @@
 - Credential-like model/config fields are rejected from ordinary storage; no credential table exists.
 - Atomic JSON export (`fsync` + `os.replace`), transactional reset/import and structured operation reports listing affected/excluded data.
 - Corrupt/unavailable-store exceptions include non-destructive recovery options; startup reports them instead of replacing the store.
-- `STARK_STUDIO_DATA_DIR` supports explicitly isolated demo/test data roots.
+- `OTTER_COVE_DATA_DIR` supports explicitly isolated demo/test data roots.
 - v1 fixture migration test preserves an existing document while upgrading to v2.
+- Settings exposes export, confirmed import and confirmed reset through the service
+  layer, reports affected/excluded data and keeps malformed imports non-mutating.
 
 ## Automated checks executed
 
 Command: `PYTHONPATH=. python3 -m unittest discover -s tests -v`
 
-Result: **8/8 passed**.
+Current full-suite result: **74/74 passed with no skips**, plus the offscreen GUI
+smoke check. The original focused persistence record was **8/8 passed**.
 
 1. Fresh schema reaches current version and all domain repository records survive close/reopen.
 2. Incognito session/message never appears in SQLite or exported JSON and does not restore after reopen.
@@ -40,6 +43,10 @@ Result: **8/8 passed**.
 ## Remaining before Step 54 can be marked Done
 
 - Fedora/PySide6 QSettings sidebar/main-geometry restart round-trip is now covered by the passing Step 01 shell acceptance test.
-- Exercise startup recovery presentation against an unavailable/corrupt store in the real GUI.
-- Wire reset/export/import into its eventual GUI management surface and manually verify the affected/excluded-data wording.
-- Add a GUI/demo launch fixture that supplies both temporary SQLite and temporary QSettings locations; both SQLite and QSettings now accept explicit isolated paths, but the Qt runtime could not be executed in this container.
+- Exercise startup recovery presentation against an unavailable/corrupt store in
+  the real GUI; the outer startup boundary already presents the service recovery
+  message without replacing the store.
+- Manually verify native import/export dialogs, confirmation/cancel behavior and
+  affected/excluded-data wording on Fedora/Wayland.
+- Record a native GUI run with isolated SQLite and QSettings locations. Automated
+  Qt coverage uses isolated fixtures offscreen and is supplementary evidence.

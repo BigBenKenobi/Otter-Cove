@@ -28,6 +28,7 @@ from core import (
 )
 from core.appearance import AppearancePreferences
 from core.command_manager import CommandManager, ShortcutConflict
+from core.data import DataStoreError, DataValidationError
 from core.theme import THEMES
 from core.theme_logic import ThemeBundleError, load_theme_bundle, save_theme_bundle_atomic
 from ui.feedback import FeedbackManager
@@ -361,6 +362,8 @@ class MainWindow(QMainWindow):
                 self.route_registry.sidebar_routes(),
                 self.command_manager.specs,
                 self.command_manager.bindings.all_bindings(),
+                str(self.data.store.path),
+                self.data.store.schema_version(),
             )
             # Signals are grouped by ownership: appearance model mutations, sidebar
             # visibility mutations, then command-manager shortcut mutations.
@@ -371,6 +374,9 @@ class MainWindow(QMainWindow):
             panel.shortcutClearRequested.connect(self._clear_shortcut)
             panel.shortcutResetRequested.connect(self._reset_shortcut)
             panel.shortcutResetAllRequested.connect(self._reset_all_shortcuts)
+            panel.dataExportRequested.connect(self._export_local_data)
+            panel.dataImportRequested.connect(self._import_local_data)
+            panel.dataResetRequested.connect(self._reset_local_data)
             return panel
 
         self.window_manager.open_window(
@@ -380,6 +386,91 @@ class MainWindow(QMainWindow):
             icon="⚙",
             default_rect=QRect(90, 46, 680, 720),
         )
+
+    def _data_operation_message(self, operation: str, report) -> str:
+        """Format service-owned affected/excluded details for feedback and Settings."""
+
+        affected_total = sum(report.counts.values())
+        affected = ", ".join(report.affected)
+        excluded = ", ".join(report.excluded)
+        path = f"\nFile: {report.path}" if report.path else ""
+        return (
+            f"{operation} completed for {affected_total} records."
+            f"{path}\nAffected: {affected}.\nExcluded: {excluded}."
+        )
+
+    def _show_data_operation_result(self, message: str, *, failed: bool = False) -> None:
+        """Keep the reusable Settings panel synchronized with operation feedback."""
+
+        panel = self._settings_panel()
+        if panel is not None:
+            panel.show_data_result(message, failed=failed)
+        if failed:
+            self.feedback.error("Local data operation failed", message, important=True)
+        else:
+            self.feedback.success("Local data updated", message)
+
+    def _export_local_data(self) -> None:
+        """Choose a JSON destination and atomically export supported local content."""
+
+        path, _selected = QFileDialog.getSaveFileName(
+            self, "Export Otter Cove local data", "otter-cove-data.json", "JSON (*.json)"
+        )
+        if not path:
+            return
+        try:
+            report = self.data.local_data.export_json(path)
+        except (DataStoreError, DataValidationError, OSError) as exc:
+            self._show_data_operation_result(str(exc), failed=True)
+            return
+        self._show_data_operation_result(self._data_operation_message("Export", report))
+
+    def _import_local_data(self) -> None:
+        """Validate and transactionally replace local content after confirmation."""
+
+        path, _selected = QFileDialog.getOpenFileName(
+            self, "Import Otter Cove local data", "", "JSON (*.json)"
+        )
+        if not path:
+            return
+        answer = QMessageBox.question(
+            self,
+            "Replace local content?",
+            "Import replaces sessions/messages, models, documents, Brain items, notes, tasks and Gallery metadata. "
+            "Credentials, Nobody sessions, preferences and window geometry are not imported.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        try:
+            report = self.data.local_data.import_json(path, replace=True)
+        except (DataStoreError, DataValidationError, OSError) as exc:
+            self._show_data_operation_result(str(exc), failed=True)
+            return
+        self.workspace.chat.reset_chat()
+        self._show_data_operation_result(self._data_operation_message("Import", report))
+
+    def _reset_local_data(self) -> None:
+        """Delete supported local content transactionally after explicit confirmation."""
+
+        answer = QMessageBox.warning(
+            self,
+            "Reset local content?",
+            "This deletes local sessions/messages, models, documents, Brain items, notes, tasks and Gallery metadata. "
+            "Credentials, Nobody sessions, preferences and window geometry are outside this reset.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer != QMessageBox.Yes:
+            return
+        try:
+            report = self.data.local_data.reset_local_content()
+        except DataStoreError as exc:
+            self._show_data_operation_result(exc.user_message(), failed=True)
+            return
+        self.workspace.chat.reset_chat()
+        self._show_data_operation_result(self._data_operation_message("Reset", report))
 
     def _apply_appearance_changes(self, changes: dict) -> None:
         """Validate a Settings appearance delta, persist accepted values, and redraw.

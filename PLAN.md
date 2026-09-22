@@ -187,6 +187,10 @@ R2. Finish foundation acceptance, without rebuilding implemented controls. Verif
     real drag/resize, dialogs, theme/shortcut restart, focus and display scaling;
     add local-data management/recovery UI under 54. Measure animation under 36.
     Exit: distinguish any remaining implementation defects from desktop evidence.
+    Current: Local Data export/import/reset controls, confirmations, result scope
+    and error handling are implemented. A native-only measurement command now
+    records actual paint/frame timings; Fedora/Wayland interaction evidence remains
+    pending and is not inferred from the supplementary offscreen run.
 R3. Add model configuration and capability defaults (40/41/42), then selector (05)
     and shared popover/composer contracts (07/08/04). Keep unavailable integrations
     labelled; use the existing Settings window and SQLite services.
@@ -697,8 +701,8 @@ Done only when:
 ### 36. Animated backgrounds
 
 Baseline: Implemented; performance/native acceptance pending
-Current check: All ten effects switch in the smoke check; Solid timer disabling, independent pause/suspension, effect color and settings have passing tests.
-Next implementation instruction: Capture actual animation/performance on the active desktop. Offscreen application suspension means this run cannot substantiate animation smoothness.
+Current check: All ten effects switch in the smoke check; Solid timer disabling, independent pause/suspension, effect color and settings have passing tests. `scripts/measure_background.py` records actual paint cost and frame intervals at 1720×900/Balanced and rejects offscreen evidence by default. A one-second offscreen plumbing check observed 62.04 FPS and 16.83 ms p95, but is supplementary only.
+Next implementation instruction: Run the 60-second measurement on the active Fedora desktop and record its environment/output. Offscreen results cannot substantiate animation smoothness.
 Depends on: 32, 54
 Deliverable: Independent effect lifecycle and shared speed, intensity, size, quality, color and pause settings.
 Done only when:

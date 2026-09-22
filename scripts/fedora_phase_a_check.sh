@@ -65,6 +65,8 @@ cat <<'EOF'
 [ ] Peek: toggle Peek, minimize/restore the tool, switch theme, close/reopen it; body fades/restores exactly and titlebar remains usable.
 [ ] Harmony + save/share: Generate must only preview; Apply changes colors. Save a named theme, restart/select it, export/import it, and verify duplicate/invalid imports do not change the current theme.
 [ ] Shortcuts: rebind Theme, test a deliberate conflict, clear/reset it, restart, and confirm Settings/New Chat shortcuts still work even if their usual navigation surface is hidden.
+[ ] Local Data: export JSON, cancel one import/reset, reject a malformed import, then confirm a valid import and reset report affected/excluded content accurately.
+[ ] Animation measurement: run `PYTHONPATH=. python3 scripts/measure_background.py --effect Leaves --duration 60` while the window remains visible and unobscured; retain the native output with the acceptance record.
 EOF
 
 exit "$status"
