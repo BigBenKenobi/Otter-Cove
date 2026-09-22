@@ -754,9 +754,9 @@ Done only when:
 
 ### 40. Settings — Add Models
 
-Baseline: Partial shared shell; model page absent
-Current check: Settings is now real, but only Appearance and Shortcuts tabs exist. ModelRepository/ModelService is available; Add Models form is absent.
-Next implementation instruction: Extend the existing Settings shell with local/API model forms and a registry service rather than replacing working tabs.
+Baseline: Partial; validated registry foundation implemented, model page absent
+Current check: ModelService now validates non-secret provider, endpoint and capability records and supports stable edit/remove/capability queries. Settings forms and deterministic Test states are still absent.
+Next implementation instruction: Extend the existing Settings shell with local/API model forms and deterministic probe states backed by this registry.
 Depends on: 1, 53, 54
 Deliverable: Settings navigation shell and model configuration forms using a shared registry.
 Done only when:
@@ -767,9 +767,9 @@ Done only when:
 
 ### 41. Settings — Added Models
 
-Baseline: Data foundation only
-Current check: Models can be stored through services, but Added Models UI, edit/remove and probe states are absent.
-Next implementation instruction: Extend service operations and implement list/probe flows with reference invalidation.
+Baseline: Partial; registry operations implemented, UI/probe states absent
+Current check: Models have validated create/edit/remove/list operations and stable IDs. Added Models UI and deterministic online/offline/testing/error probe states are absent.
+Next implementation instruction: Implement list/filter/probe UI and call the shared defaults invalidation contract before removal.
 Depends on: 40
 Deliverable: Shared model list with edit/remove/probe and availability states.
 Done only when:
@@ -780,9 +780,9 @@ Done only when:
 
 ### 42. Settings — AI Defaults
 
-Baseline: Not started
-Current check: No capability-default configuration UI or resolver is exposed.
-Next implementation instruction: Implement after model management and share it across consumers.
+Baseline: Partial; resolver implemented, UI/consumers absent
+Current check: ModelDefaults persists compatible chat/utility/vision/research/image assignments and ordered duplicate-free fallbacks, ignores stale IDs and supports explicit invalidation. No defaults UI or consumer binding exists yet.
+Next implementation instruction: Add capability-filtered Settings controls and inject the resolver into later composer/comparison/research/image mock adapters.
 Depends on: 41
 Deliverable: Central capability-based selection for chat, fallbacks, utility, vision, research, images and writing style.
 Done only when:

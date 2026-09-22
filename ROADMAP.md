@@ -3,9 +3,9 @@
 Execution order only. [PLAN.md](PLAN.md) owns scope, dependencies and acceptance;
 [STATUS.md](STATUS.md) records current progress and evidence.
 
-**Next: R2 — finish foundation acceptance and local-data recovery UI.** R1's
-failed-send, session-mode, private-disposal, draft-ownership, scaled-control and
-unavailable-capability corrections have targeted tests; native checks remain.
+**Next: review R2, then continue R3 model settings.** R2's local-data UI and
+measurement tooling are in review while native Fedora checks remain. R3 has begun
+with the shared validated registry and capability-default resolver.
 
 | Phase | Order / focus | Exit reference |
 |---|---|---|

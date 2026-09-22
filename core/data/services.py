@@ -20,7 +20,7 @@ from typing import Any
 from .database import SQLiteStore
 from .errors import DataValidationError
 from .ids import new_id
-from .models import MessageRecord, SessionRecord
+from .models import MessageRecord, ModelRecord, SessionRecord
 from .policy import assert_no_credentials
 from .repositories import (
     BrainRepository,
@@ -138,14 +138,104 @@ class SessionService:
 
 
 class ModelService:
+    """Own validated non-secret model records and capability queries.
+
+    No network call or credential storage occurs here. Provider adapters may later
+    consume these records, while Settings, selectors and defaults share this one
+    validation boundary today.
+    """
+
+    PROVIDERS = ("ollama", "openai-compatible", "anthropic-compatible", "custom-api")
+    CAPABILITIES = ("chat", "vision", "tools", "research", "images", "utility")
+
     def __init__(self, repository: ModelRepository) -> None:
         self._repository = repository
 
-    def create(self, name: str, provider: str, **kwargs):
+    def create(self, name: str, provider: str, **kwargs) -> ModelRecord:
+        """Preserve the low-level creation path used by import and legacy fixtures."""
+
         return self._repository.create(name, provider, **kwargs)
 
-    def list(self):
+    def list(self) -> list[ModelRecord]:
+        """Return every configured record in case-insensitive name order."""
+
         return self._repository.list()
+
+    def configure(
+        self,
+        name: str,
+        provider: str,
+        endpoint: str,
+        capabilities: list[str] | tuple[str, ...],
+        *,
+        enabled: bool = True,
+        model_id: str | None = None,
+    ) -> ModelRecord:
+        """Validate and create or update one user-visible registry entry.
+
+        Credentials are intentionally absent from the contract. API-provider
+        records describe an endpoint only until a secure credential adapter exists.
+        """
+
+        normalized_name = name.strip()
+        normalized_provider = provider.strip().lower()
+        normalized_endpoint = endpoint.strip()
+        normalized_capabilities = tuple(dict.fromkeys(item.strip().lower() for item in capabilities))
+        if not normalized_name:
+            raise DataValidationError("Model name is required.")
+        if normalized_provider not in self.PROVIDERS:
+            raise DataValidationError(f"Unsupported model provider: {provider or '(empty)' }.")
+        if not normalized_endpoint:
+            raise DataValidationError("Model endpoint is required.")
+        unknown = sorted(set(normalized_capabilities) - set(self.CAPABILITIES))
+        if unknown:
+            raise DataValidationError(f"Unsupported model capabilities: {', '.join(unknown)}.")
+        if "chat" not in normalized_capabilities:
+            raise DataValidationError("Configured models must provide the chat capability.")
+        duplicate = next(
+            (
+                record for record in self.list()
+                if record.name.casefold() == normalized_name.casefold() and record.id != model_id
+            ),
+            None,
+        )
+        if duplicate:
+            raise DataValidationError(f'A model named "{normalized_name}" already exists.')
+
+        config = {"capabilities": list(normalized_capabilities)}
+        if model_id is None:
+            return self._repository.create(
+                normalized_name, normalized_provider, endpoint=normalized_endpoint,
+                enabled=enabled, config=config,
+            )
+        updated = self._repository.update(
+            model_id, name=normalized_name, provider=normalized_provider,
+            endpoint=normalized_endpoint, enabled=enabled, config=config,
+        )
+        if updated is None:
+            raise DataValidationError("The model being edited no longer exists.")
+        return updated
+
+    def get(self, model_id: str) -> ModelRecord | None:
+        """Return one configured model by stable ID."""
+
+        return self._repository.get(model_id)
+
+    def remove(self, model_id: str) -> bool:
+        """Remove one model; callers must invalidate their stored references."""
+
+        return self._repository.delete(model_id)
+
+    def compatible(self, capability: str) -> list[ModelRecord]:
+        """List enabled records advertising ``capability`` in deterministic order."""
+
+        requested = capability.strip().lower()
+        if requested not in self.CAPABILITIES:
+            raise DataValidationError(f"Unsupported model capability: {capability}.")
+        return [
+            record for record in self.list()
+            if record.enabled and requested in record.config.get("capabilities", [])
+        ]
 
 
 class DocumentService:

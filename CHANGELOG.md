@@ -4,6 +4,8 @@ All notable changes to Otter Cove are documented here.
 
 ## Unreleased
 
+- Add validated non-secret model registry edit/remove/capability queries and a
+  persistent capability-default resolver with ordered, stale-safe fallbacks.
 - Add a Local Data Settings tab for atomic JSON export, confirmed import and
   confirmed reset, with explicit affected/excluded scope and visible errors.
 - Add native animation instrumentation for 1720×900/Balanced frame intervals and

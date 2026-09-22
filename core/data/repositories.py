@@ -178,6 +178,13 @@ class SessionRepository(RepositoryBase):
 
 
 class ModelRepository(RepositoryBase):
+    """Persist model registry records without owning provider behavior.
+
+    The repository stores non-secret configuration only. Higher-level validation,
+    capability matching and reference invalidation belong to ``ModelService`` and
+    the defaults resolver so import/export can continue using this narrow data API.
+    """
+
     def create(
         self,
         name: str,
@@ -213,11 +220,53 @@ class ModelRepository(RepositoryBase):
 
     def list(self) -> list[ModelRecord]:
         rows = self.store.connection.execute("SELECT * FROM models ORDER BY name COLLATE NOCASE").fetchall()
-        return [ModelRecord(
+        return [self._from_row(row) for row in rows]
+
+    def get(self, record_id: str) -> ModelRecord | None:
+        """Return one model record, or ``None`` when its stable ID is unknown."""
+
+        row = self.store.connection.execute("SELECT * FROM models WHERE id=?", (record_id,)).fetchone()
+        return self._from_row(row) if row else None
+
+    def update(
+        self,
+        record_id: str,
+        *,
+        name: str,
+        provider: str,
+        endpoint: str,
+        enabled: bool,
+        config: dict[str, Any],
+        connection: sqlite3.Connection | None = None,
+    ) -> ModelRecord | None:
+        """Replace editable fields while preserving identity and creation time."""
+
+        safe_config = dict(config)
+        assert_no_credentials(safe_config, path="model.config")
+        updated_at = utc_now()
+        with self._writer(connection) as conn:
+            cursor = conn.execute(
+                "UPDATE models SET name=?,provider=?,endpoint=?,enabled=?,updated_at=?,config_json=? WHERE id=?",
+                (name, provider, endpoint, int(enabled), updated_at, _dump(safe_config), record_id),
+            )
+        return self.get(record_id) if cursor.rowcount else None
+
+    def delete(self, record_id: str, *, connection: sqlite3.Connection | None = None) -> bool:
+        """Delete one registry record and report whether it existed."""
+
+        with self._writer(connection) as conn:
+            cursor = conn.execute("DELETE FROM models WHERE id=?", (record_id,))
+        return bool(cursor.rowcount)
+
+    @staticmethod
+    def _from_row(row: sqlite3.Row) -> ModelRecord:
+        """Map the SQLite representation to the immutable public record."""
+
+        return ModelRecord(
             id=row["id"], name=row["name"], provider=row["provider"], endpoint=row["endpoint"],
             enabled=bool(row["enabled"]), created_at=row["created_at"], updated_at=row["updated_at"],
             config=_load(row["config_json"], {}),
-        ) for row in rows]
+        )
 
 
 class DocumentRepository(RepositoryBase):

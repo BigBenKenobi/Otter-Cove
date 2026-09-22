@@ -2,11 +2,11 @@
 
 Updated 22 September 2026. Start here when returning to the project.
 
-**Current focus:** finish and verify Phase A foundations; correct the GUI review
-findings before expanding into new feature modules.
+**Current focus:** review the R2 foundation completion and build R3's shared model
+configuration/default contracts before connecting provider adapters.
 
-**Next action:** Review the stacked R2 local-data/recovery implementation, then run
-the native Fedora foundation checklist and 60-second animation measurement.
+**Next action:** Add the Settings model-management UI and deterministic probe
+states on top of the validated registry; native R2 Fedora checks remain separate.
 
 ## What works
 
@@ -19,6 +19,9 @@ the native Fedora foundation checklist and 60-second animation measurement.
   consumers exist; session storage status describes behavior that is implemented.
 - Settings now exposes Local Data export/import/reset with confirmation, explicit
   affected/excluded scope and non-destructive error reporting.
+- Model configuration now validates non-secret provider/endpoint/capability
+  records, supports edit/remove/filter operations and resolves persistent,
+  capability-compatible defaults and ordered fallbacks without stale IDs.
 - Shell, shared feedback/states, floating windows and persistent local data services.
 - Theme customization, harmony, named-theme import/export, animated backgrounds.
 - Appearance settings and shortcut editing. Most product workspaces remain scaffolds.
@@ -26,10 +29,11 @@ the native Fedora foundation checklist and 60-second animation measurement.
 
 ## Latest verification
 
-On 22 September, the current stacked R2 workspace passed **74/74 tests with no
+On 22 September, the current R3 foundation workspace passed **80/80 tests with no
 skips**, plus the offscreen GUI smoke check. The run covers failed-send retry, bidirectional
 normal/Nobody isolation, session-owned drafts, transient disposal and Large/Roomy
-control sizing, and Local Data export/error/reset GUI paths. The 1100×680
+control sizing, Local Data export/error/reset GUI paths, and model registry/default
+validation. The 1100×680
 Large/Roomy state was also rendered and inspected offscreen. A one-second
 offscreen animation-instrumentation check observed 62.04 FPS and 16.83 ms p95;
 this validates measurement plumbing only, not native desktop performance.
