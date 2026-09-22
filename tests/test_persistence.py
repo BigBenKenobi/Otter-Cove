@@ -1,3 +1,10 @@
+"""Behavioral tests for Otter Cove's SQLite and memory-only data boundaries.
+
+Every test uses a temporary store. The suite covers schema migration, round trips,
+atomic recovery, credential rejection, and the rule that Nobody sessions remain
+outside durable storage and are erased when their process-local lifecycle ends.
+"""
+
 from __future__ import annotations
 
 import json
@@ -21,6 +28,8 @@ from core.data.services import EXPORT_FORMAT, default_data_dir, default_database
 
 
 class PersistenceTests(unittest.TestCase):
+    """Verify durable records and transient privacy records through public services."""
+
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()
         self.root = Path(self.tempdir.name)
@@ -74,6 +83,19 @@ class PersistenceTests(unittest.TestCase):
         self.assertFalse(reopened.sessions.is_incognito(incognito.id))
         self.assertIsNone(reopened.sessions.get_persistent_session(incognito.id))
         reopened.close()
+
+    def test_incognito_session_disposal_removes_messages_from_process_memory(self) -> None:
+        """Closing a Nobody session must end access to its transient records."""
+
+        services = AppDataServices.open(self.db_path)
+        incognito = services.sessions.create_session("Dispose me", incognito=True)
+        services.sessions.add_message(incognito.id, "user", "temporary")
+
+        self.assertTrue(services.sessions.dispose_incognito_session(incognito.id))
+        self.assertFalse(services.sessions.is_incognito(incognito.id))
+        self.assertIsNone(services.sessions.get_session(incognito.id))
+        self.assertFalse(services.sessions.dispose_incognito_session(incognito.id))
+        services.close()
 
     def test_credential_like_configuration_is_rejected(self) -> None:
         services = AppDataServices.open(self.db_path)

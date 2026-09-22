@@ -441,16 +441,17 @@ class MainWindow(QMainWindow):
         self.feedback.success("Appearance reset", "Appearance preferences were restored to their documented defaults.")
 
     def _toggle_nobody(self) -> None:
-        """Toggle the chat's transient/incognito mode through its existing control.
+        """Switch the active chat view through its existing Nobody control.
 
-        The button remains the owner of its checked state and chat transition
-        behavior.  Toggling it programmatically preserves the normal Qt signal
-        path while this shell supplies a short confirmation message.
+        The button remains the owner of its checked state; its normal Qt signal
+        path saves the outgoing session draft and renders the selected privacy
+        mode. The shell only supplies confirmation of the completed transition.
         """
         button = self.workspace.chat.nobody
         button.setChecked(not button.isChecked())
         state = "on" if button.isChecked() else "off"
-        self.feedback.info("Nobody mode", f"Nobody mode is {state} for the next/local session transition.", timeout_ms=2400)
+        policy = "memory-only session" if button.isChecked() else "persistent session"
+        self.feedback.info("Nobody mode", f"Nobody mode is {state}; showing the {policy} view.", timeout_ms=2400)
 
     def _tts_demo(self) -> None:
         """Report the intentionally local, non-provider TTS demo command action."""
