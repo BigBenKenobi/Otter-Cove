@@ -419,7 +419,7 @@ class MainWindow(QMainWindow):
         if not path:
             return
         try:
-            report = self.data.local_data.export_json(path)
+            report = self.data.local_data.export_json(path, additional_protected_paths=(self.settings.path,))
         except (DataStoreError, DataValidationError, OSError) as exc:
             self._show_data_operation_result(str(exc), failed=True)
             return
@@ -962,7 +962,17 @@ class MainWindow(QMainWindow):
         # than leaving the currently active theme or panel state partially changed.
         try:
             bundle = self.theme_manager.bundle_for_current(self._effect_payload(), name=name)
-            save_theme_bundle_atomic(path, bundle)
+            store_path = self.data.store.path
+            save_theme_bundle_atomic(
+                path,
+                bundle,
+                protected_paths=(
+                    store_path,
+                    store_path.with_name(f"{store_path.name}-wal"),
+                    store_path.with_name(f"{store_path.name}-shm"),
+                    self.settings.path,
+                ),
+            )
         except ThemeBundleError as exc:
             self.feedback.error("Theme export failed", str(exc), important=True)
             return

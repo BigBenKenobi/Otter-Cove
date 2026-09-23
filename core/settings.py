@@ -61,6 +61,16 @@ class AppSettings:
     def status(self) -> QSettings.Status:
         return self._settings.status()
 
+    @property
+    def path(self) -> Path:
+        """Return QSettings' actual backing file for export-target protection.
+
+        Qt determines the native location when no INI override is injected, so
+        callers must ask this owner rather than reconstructing a profile path.
+        """
+
+        return Path(self._settings.fileName()).expanduser().resolve(strict=False)
+
     def window_normal_rect(self, key: str, default: QRect) -> QRect:
         """Return the persisted full-size geometry for a floating tool.
 

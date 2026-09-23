@@ -129,6 +129,36 @@ class PersistenceTests(unittest.TestCase):
         self.assertEqual(services.notes.list()[0].id, note.id)
         services.close()
 
+    def test_export_rejects_active_store_aliases_and_sidecars_before_mutation(self) -> None:
+        """A JSON export cannot replace a disposable live SQLite store by any alias."""
+
+        services = AppDataServices.open(self.db_path)
+        kept = services.sessions.create_session("Keep database intact")
+        protected_targets = (
+            self.db_path,
+            self.db_path.with_name(f"{self.db_path.name}-wal"),
+            self.db_path.with_name(f"{self.db_path.name}-shm"),
+        )
+        with self.assertRaisesRegex(DataValidationError, "protected active"):
+            services.local_data.export_json(self.db_path)
+        for target in protected_targets[1:]:
+            with self.assertRaisesRegex(DataValidationError, "protected active"):
+                services.local_data.export_json(target)
+        alias = self.root / "alias.sqlite3"
+        alias.symlink_to(self.db_path)
+        with self.assertRaisesRegex(DataValidationError, "protected active"):
+            services.local_data.export_json(alias)
+        preferences = self.root / "settings.ini"
+        preferences.write_text("[appearance]\\ntheme=Forest\\n", encoding="utf-8")
+        with self.assertRaisesRegex(DataValidationError, "protected active"):
+            services.local_data.export_json(preferences, additional_protected_paths=(preferences,))
+        self.assertIn("theme=Forest", preferences.read_text(encoding="utf-8"))
+        self.assertEqual(services.sessions.get_persistent_session(kept.id).title, "Keep database intact")
+        services.close()
+        reopened = AppDataServices.open(self.db_path)
+        self.assertEqual(reopened.sessions.get_persistent_session(kept.id).title, "Keep database intact")
+        reopened.close()
+
     def test_otter_cove_default_paths_and_override(self) -> None:
         xdg_root = self.root / "xdg"
         otter_root = self.root / "otter"

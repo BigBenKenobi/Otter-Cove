@@ -32,6 +32,7 @@ from .repositories import (
     TaskRepository,
 )
 from .timeutil import utc_now
+from core.protected_paths import ProtectedTargetError, validate_export_target
 
 EXPORT_FORMAT = "otter-cove-local-data"
 EXPORT_VERSION = 1
@@ -289,7 +290,9 @@ class LocalDataService:
         assert_no_credentials(payload, path="export")
         return payload
 
-    def export_json(self, path: str | Path) -> DataOperationReport:
+    def export_json(
+        self, path: str | Path, *, additional_protected_paths: tuple[str | Path, ...] = ()
+    ) -> DataOperationReport:
         """Atomically serialize :meth:`snapshot` to ``path`` and report its scope.
 
         The temporary sibling file is flushed before ``os.replace`` publishes it,
@@ -297,7 +300,13 @@ class LocalDataService:
         errors intentionally propagate to the shell, which owns user feedback.
         """
 
-        target = Path(path).expanduser().resolve()
+        protected = (self.store.path, self.store.path.with_name(f"{self.store.path.name}-wal"),
+                     self.store.path.with_name(f"{self.store.path.name}-shm"), *additional_protected_paths)
+        try:
+            target = validate_export_target(path, protected)
+        except ProtectedTargetError as exc:
+            raise DataValidationError(str(exc)) from exc
+        # Validate before making a parent directory or allocating a temporary file.
         target.parent.mkdir(parents=True, exist_ok=True)
         payload = self.snapshot()
         encoded = (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")

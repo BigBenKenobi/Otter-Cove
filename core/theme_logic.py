@@ -8,6 +8,8 @@ import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
+from .protected_paths import ProtectedTargetError, validate_export_target
+
 THEME_BUNDLE_VERSION = 1
 HARMONY_MODES = ("Complementary", "Analogous", "Triadic", "Split Complementary")
 APPEARANCE_MODES = ("Light", "Dark")
@@ -232,8 +234,20 @@ def load_theme_bundle(path: str | Path) -> dict[str, Any]:
     return loads_theme_bundle(text)
 
 
-def save_theme_bundle_atomic(path: str | Path, bundle: Mapping[str, Any]) -> None:
-    target = Path(path)
+def save_theme_bundle_atomic(
+    path: str | Path, bundle: Mapping[str, Any], *, protected_paths: tuple[str | Path, ...] = ()
+) -> None:
+    """Atomically write a valid theme unless ``path`` aliases active storage.
+
+    The shell supplies its live SQLite, sidecar, and QSettings paths.  Target
+    validation happens before directory creation so an unsafe rejected location
+    cannot leave a new directory or temporary file behind.
+    """
+
+    try:
+        target = validate_export_target(path, protected_paths)
+    except ProtectedTargetError as exc:
+        raise ThemeBundleError(str(exc)) from exc
     target.parent.mkdir(parents=True, exist_ok=True)
     payload = dumps_theme_bundle(bundle)
     temp_path: Path | None = None

@@ -130,6 +130,20 @@ class ThemeLogicTests(unittest.TestCase):
                 save_theme_bundle_atomic(path, bad)
             self.assertEqual(path.read_text(encoding="utf-8"), "sentinel")
 
+    def test_export_rejects_protected_target_before_creating_parent(self):
+        """Theme exports share the shell's active-storage protection policy."""
+
+        bundle = make_theme_bundle("Safe", PALETTE, font="Monospace", text_size="Default", density="Comfortable", frosted=False, effect=EFFECT)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            protected = root / "active.sqlite3"
+            protected.write_bytes(b"SQLite format 3\\x00")
+            alias = root / "alias.json"
+            alias.symlink_to(protected)
+            with self.assertRaisesRegex(ThemeBundleError, "protected active"):
+                save_theme_bundle_atomic(alias, bundle, protected_paths=(protected,))
+            self.assertEqual(protected.read_bytes(), b"SQLite format 3\\x00")
+
 
 if __name__ == "__main__":
     unittest.main()
