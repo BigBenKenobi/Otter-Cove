@@ -1,6 +1,16 @@
+"""Theme-aware background canvas and observable effect paint boundary.
+
+The canvas delegates animation state to ``BackgroundEffectManager`` and owns the
+actual Qt paint operation. ``framePainted`` exposes elapsed paint cost to the
+native acceptance measurement script without coupling effects to benchmarking or
+changing their update cadence.
+"""
+
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, Qt
+from time import perf_counter
+
+from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import QWidget
 
@@ -10,6 +20,8 @@ from effects import BackgroundEffectManager
 
 class BackgroundCanvas(QWidget):
     """Theme-aware paint surface backed by the reusable effect manager."""
+
+    framePainted = Signal(float)
 
     def __init__(self, theme: Theme, parent=None) -> None:
         super().__init__(parent)
@@ -82,7 +94,12 @@ class BackgroundCanvas(QWidget):
         self.effects.set_suspended(self._hidden_suspended or self._external_suspended)
 
     def paintEvent(self, _event) -> None:
+        """Paint one complete frame and publish its elapsed milliseconds."""
+
+        started = perf_counter()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
         painter.fillRect(self.rect(), QColor(self.theme.background))
         self.effects.paint(painter, QRectF(self.rect()), self.effect_color)
+        painter.end()
+        self.framePainted.emit((perf_counter() - started) * 1000.0)
