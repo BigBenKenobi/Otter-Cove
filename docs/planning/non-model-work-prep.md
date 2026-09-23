@@ -20,7 +20,7 @@ simulated, make no network requests, execute no model, and store no credentials.
 | Area | PLAN steps | Completion boundary |
 |---|---:|---|
 | Foundation and desktop acceptance | 01, 02, 32–39, 47, 50, 53, 54, scoped 55 | Finish native interaction, dialogs, scaling, restart, accessibility and performance evidence; retain honest unavailable states for deferred model-dependent controls. PR #6 contains the current R2 implementation and remains the immediate review gate. |
-| Sessions and local conversation presentation | 03, 06, 10, 11, 48, 49 | Complete local session CRUD, empty/restored states, Nobody lifecycle, history search, message/status rendering and explicit sensitive-span presentation. No generated response is required. |
+| Sessions and local conversation presentation | 03, 06, 10, 11, 48, 49 | Complete local session CRUD, empty/restored states, Nobody lifecycle, history search, message/status rendering and explicit sensitive-span presentation. No generated response is required. See the [execution-ready plan](sessions-local-conversation-plan.md). |
 | Local composer utilities | 07, 08 | Complete the shared popover, attachments, document/workspace selection and command-backed optional actions using local or clearly simulated behavior. |
 | Documents and Library | 27, 28 | Complete safe text/Markdown import/edit/view, unsaved-change protection, aggregation, archive/search and stable cross-module IDs. |
 | Brain records and controls | 13–16 | Complete memories, skills, focused import/export and preference behavior using deterministic audit/extraction fixtures. No model evaluates, extracts or injects content. |
