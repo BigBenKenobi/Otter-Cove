@@ -116,6 +116,11 @@ class PersistenceTests(unittest.TestCase):
         self.assertEqual(services.models.list(), [])
         services.models.create("Safe", "api", endpoint="https://example.invalid/v1", config={"token_limit": 1024})
         self.assertEqual(len(services.models.list()), 1)
+        for endpoint in ("https://user@example.invalid", "https://example.invalid/?API%5FKEY=value"):
+            with self.assertRaises(PersistencePolicyError):
+                services.models.create("Encoded", "api", endpoint=endpoint)
+        document = services.documents.create("Ordinary", content="api_key=ordinary prose is retained")
+        self.assertEqual(document.content, "api_key=ordinary prose is retained")
         services.close()
 
     def test_legacy_unsafe_structured_record_blocks_export_without_writing(self) -> None:
