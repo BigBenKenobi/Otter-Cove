@@ -33,6 +33,9 @@ local storage, deterministic services and native Fedora validation. Completing
 them would produce substantial useful application behavior while leaving the
 model layer untouched.
 
+The execution-ready plan for the first area is
+[Foundation and desktop completion](foundation-desktop-plan.md).
+
 ## Useful work that cannot be called complete yet
 
 | Area | PLAN steps | Why completion is blocked |
