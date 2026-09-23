@@ -1,61 +1,79 @@
 # Testing
 
-Run commands from the repository root. Tests use temporary storage; do not
-point fixtures at a personal profile. See [ACCEPTANCE](ACCEPTANCE.md) for evidence.
+Run from the repository root with disposable SQLite/QSettings. The
+[shared gate](../PLAN.md#shared-acceptance-gate) owns fixtures, targets and acceptance;
+[ACCEPTANCE](ACCEPTANCE.md) indexes actual evidence.
 
 ## Automated commands
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. python3 -m unittest discover -s tests -v
-```
-
-For an explicitly offscreen run and smoke check:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 QT_QPA_PLATFORM=offscreen PYTHONPATH=. python3 -m unittest discover -s tests -v
 PYTHONDONTWRITEBYTECODE=1 QT_QPA_PLATFORM=offscreen PYTHONPATH=. python3 scripts/fedora_gui_smoke.py --offscreen
 ```
 
-Missing PySide6 may skip Qt tests; a run with skips does not establish full suite
-coverage. The current tests themselves default Qt to offscreen. Running the suite
-in a Wayland desktop therefore does not by itself test native pointer interaction.
+Missing PySide6 may currently skip Qt tests. A run with skips does not satisfy the
+full-suite gate. Tests themselves default Qt to offscreen, so launching them from
+Wayland does not establish native pointer interaction. OC-21 adds enforced
+coverage/platform reporting; do not claim those runner fixes already exist.
 
-## Fedora desktop run
+The smoke currently prints “native” even when run offscreen. Record the actual
+platform and invocation rather than copying that label as an acceptance claim.
+
+## Latest recorded source checks
+
+| Source/environment | Recorded result | Limit |
+|---|---|---|
+| Main `6aa8022`; Ubuntu 24.04.3, Python 3.12.14, PySide6/Qt 6.11.2 | 73 tests, no skips, PASS on 23 September | Offscreen; additional probes found defects |
+| PR #6 `a560b5d`; same environment | 74 tests, no skips, and offscreen smoke PASS | Separate implementation branch; not merged or native-accepted |
+| Historical 21 September Fedora/KDE, Python 3.14.7, Qt 6.11.2 | 65 tests plus offscreen smoke PASS | Historical source manifest, not a new baseline |
+
+See the [23 September review](reviews/2026-09-23-current-implementation.md) and
+[historical evidence](acceptance/2026-09-21-offscreen.md). The documentation
+replacement adds no runtime acceptance claim.
+
+## Native Fedora run
 
 ```bash
 ./scripts/fedora_phase_a_check.sh
 ```
 
-Run in the intended desktop session without an inherited `QT_QPA_PLATFORM=offscreen`.
-The script records context, executes the suite and GUI smoke, and prints manual
-checks. Printing that checklist does not pass it. Inspect actual Qt platform and
-record each manual result. [FEDORA_CHECKLIST](FEDORA_CHECKLIST.md) describes the
-functional pass; PLAN.md owns requirements and numerical targets.
+Use the intended KDE/GNOME Wayland session without inherited
+`QT_QPA_PLATFORM=offscreen`. Record the actual Qt platform, desktop, display scale,
+GPU/driver and source. The runner's current output/checklist is supplemental;
+execute [FEDORA_CHECKLIST](FEDORA_CHECKLIST.md) and PLAN's selected native cells.
+Printing a checklist is not passing it.
 
-| Environment | Automated evidence | Native/manual status |
-|---|---|---|
-| Fedora 44 KDE edition, Python 3.14.7, Qt/PySide6 6.11.2, offscreen | 65/65 plus smoke pass, 21 September | Not applicable to native acceptance |
-| Fedora 44 KDE Wayland | Historical native-smoke report exists; no fresh native run in consolidation | Current pointer/dialog/Peek/shortcut/scaling checks pending |
-| Fedora 44 GNOME Wayland | No recorded current run | Pending, or explicitly revise release support |
-| 100%, 150%, 200% scaling | No current matrix evidence | Pending on supported desktops |
+Native KDE/GNOME interaction, 100/150/200% scaling and animation performance remain
+pending. The measurement helper in PR #6 becomes available only after that
+corrected implementation lands; do not assume it exists on current main.
+
+## Packaging and documentation checks
+
+OC-22 requires building/installing away from the checkout so source-directory
+imports cannot conceal missing packages. The reviewed wheel failed that check;
+a successful build alone is insufficient. OC-21 adds the corresponding CI gate.
+
+For documentation-only changes, verify local links/anchors, task/dependency
+coverage, preservation of catalogue requirements and `git diff --check`. Inspect
+the changed paths to confirm no runtime code changed. Do not rerun runtime suites
+merely to relabel existing evidence with a documentation commit.
 
 ## Evidence and tagging
 
-Record command, environment, Qt platform, skips, result and source commit/hash.
-Store curated output/captures in `docs/acceptance/evidence/<run>/`; keep original
-references in `docs/reference/`. [Current automated record](acceptance/2026-09-21-offscreen.md)
-includes a source manifest because this workspace is not a Git repository.
+Record commands, full source SHA, environment/platform, skips and actual outcomes.
+Store curated logs/captures in `docs/acceptance/evidence/<date>-<area>/`, with a
+short linked acceptance record. Original references are intended for
+`docs/reference/` but are absent from the reviewed checkout; OC-00 tracks recovery.
 
-Once Git is initialized with a committed baseline, run the intended milestone
-checks against a clean checkout and record its SHA before tagging:
+The repository is initialized and tracks GitHub. The old pre-Git source manifest
+is historical context, not a description of today's checkout. Before an intended
+milestone acceptance, record clean status and the tested commit:
 
 ```bash
 git status --short
 git rev-parse HEAD
-# After the intended checks pass and their evidence identifies this commit:
-git tag -a phase-a-automated-pass -m "Phase A automated suite and native smoke verified; see acceptance evidence"
 ```
 
-Do not use that message for an offscreen-only run. Use a separately named offscreen
-tag if that is the scope verified. Never move an existing milestone tag to a new
-commit. No commit or tag was created during this documentation consolidation.
+Only tag an evidenced revision under the intended release direction. The tag's
+name/message must match native versus offscreen scope; never move an existing
+milestone tag. This plan consolidation does not create a release tag.

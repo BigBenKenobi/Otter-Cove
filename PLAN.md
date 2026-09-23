@@ -1,238 +1,1193 @@
-# OTTER COVE — CURRENT GUI PLAN AND IMPLEMENTATION INSTRUCTIONS
+# Otter Cove — implementation and acceptance plan
 
-Progress review: 21 September 2026 (supersedes the earlier same-day baseline)
-Target: Fedora 44 desktop, PySide6 / Qt Widgets
-Authoritative current plan: PLAN.md at the repository root.
+Updated 23 September 2026. Target: Fedora 44, PySide6 / Qt Widgets.
 
-## DOCUMENT OWNERSHIP AND PROVENANCE
+**This is the single replacement plan.** It consolidates the former root plan,
+PR #8's Foundation/Sessions/Composer plans and PR #9's 24 improvement tasks.
+The earlier proposals are superseded. All 55 original feature IDs, deliverables,
+dependency declarations and acceptance checkboxes are retained in the catalogue
+below. Historical observations and repeated execution instructions have been
+removed from that catalogue; current status belongs in STATUS and the ledger.
 
-This is the sole current implementation and acceptance plan. It adopts the
-21 September GUI progress review formerly stored in the workspace-root Plan.
-The application lives at the repository root (formerly Current Build).
-All application-relative paths below refer to this directory unless stated otherwise.
+**Next:** establish OC-00's implementation baseline, then complete **OC-01–04**
+before landing PR #6's data-management UI. Model configuration/execution remains
+deferred. This documentation change does not implement the planned fixes.
 
-- PLAN.md owns scope, feature IDs, dependencies and acceptance conditions.
-- ROADMAP.md summarizes execution order and points to the next work package.
-- STATUS.md is the short return-to-project handoff: current state, latest evidence,
-  known gaps and next action. It does not redefine acceptance requirements.
-- docs/acceptance/ holds dated evidence, including consolidated historical records.
-- docs/archive/ holds retired snapshots, never current implementation instructions.
+## Navigation and document ownership
 
-Update PLAN.md when requirements or acceptance baselines change; update STATUS.md
-when progress/evidence/next action changes; update ROADMAP.md only when sequence
-changes. Link to detailed criteria instead of copying them into other documents.
-The older PLAN.txt is archived. The former PLAN.md stub is superseded, and the
-workspace-root Plan is moved here, leaving no second active plan.
-This consolidation changes documentation only; it does not fix the findings below.
+- [Current baseline](#current-baseline)
+- [Execution order](#execution-order)
+- [Cross-area completion boundaries](#cross-area-completion-boundaries)
+- [Existing implementation tasks: OC-00–23](#existing-implementation-tasks)
+- [Sessions and conversation: SC-1–6](#sessions-and-local-conversation)
+- [Composer utilities: CU-0–6](#local-composer-utilities)
+- [Shared acceptance gate](#shared-acceptance-gate)
+- [Feature catalogue: 01–55](#feature-steps-and-acceptance-conditions)
+- [Superseded-plan mapping](#superseded-plan-mapping)
 
-The original 55 IDs and acceptance criteria are retained. Each feature now has a
-current observation and a next implementation instruction. Existing working
-foundations should be extended, not rewritten. No total completion percentage is
-assigned: these steps differ greatly in size, and passing tests cover only the
-implemented slice, not all planned workflows.
+| Document | Role |
+|---|---|
+| `PLAN.md` | Sole current scope, execution tasks, dependencies and acceptance requirements |
+| [STATUS.md](STATUS.md) | Current implementation state, exact evidence and next action |
+| [ROADMAP.md](ROADMAP.md) | Short summary of the execution order in this plan |
+| [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) | Feature state/evidence index; not another requirements list |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [DECISIONS](docs/DECISIONS.md), [AGENTS](AGENTS.md) | Boundaries, settled choices and mandatory engineering documentation |
+| [docs/TESTING.md](docs/TESTING.md), [FEDORA_CHECKLIST](docs/FEDORA_CHECKLIST.md) | Commands and native test procedure supporting this plan |
+| `docs/reviews/`, `docs/acceptance/`, `docs/archive/` | Dated findings/evidence/history; never alternative current instructions |
+| [docs/planning/](docs/planning/README.md) | Compatibility pointers to this replacement; no active standalone proposals |
 
-## CHECKS EXECUTED THIS REVIEW
+## Current baseline
 
-Environment: Fedora Linux 44 (KDE Plasma Desktop Edition); Python 3.14.7;
-PySide6 6.11.2 / Qt 6.11.2. Execution platform: offscreen.
+| Source reviewed | Revision | Actual evidence |
+|---|---|---|
+| Application on `main` before documentation consolidation | `6aa802219f4130ac4732039bda01b0a870934cfe` | 73 tests passed, no skips |
+| Open R2 implementation PR #6 | `a560b5d7c7d88fc6d941e0d5da8542c9ac7d64c3` | 74 tests passed, no skips; offscreen smoke passed; additional defects remain |
+| Former non-model proposals, PR #8 | `531aaa38fe61fac867f8238744c5c6fce08aca18` | Documentation source absorbed into this replacement |
+| Former improvement proposal, initial PR #9 | `3240dcb37e287cbb6d059c86b940bbd86da6b8d0` | Documentation source absorbed into this replacement |
 
-Commands were run before directory renaming; run from the repository root now:
-  PYTHONDONTWRITEBYTECODE=1 QT_QPA_PLATFORM=offscreen PYTHONPATH=. \
-    python3 -m unittest discover -s tests -v
-Result: 65 tests run, 65 passed, no skips or failures (0.608 seconds).
+The 23 September code review used Ubuntu 24.04.3, Python 3.12.14 and PySide6/Qt
+6.11.2 with `QT_QPA_PLATFORM=offscreen`. It provides no native Fedora/Wayland
+acceptance. The [review record](docs/reviews/2026-09-23-current-implementation.md)
+contains reproduced failures and safe reproduction instructions. The earlier
+65-test Fedora offscreen result is dated historical evidence.
 
-  PYTHONDONTWRITEBYTECODE=1 QT_QPA_PLATFORM=offscreen PYTHONPATH=. \
-    python3 scripts/fedora_gui_smoke.py --offscreen
-Result: PASS. The script prints "native GUI smoke", but this invocation was
-explicitly offscreen and must not be reported as a new native desktop pass.
-Coverage includes tool reuse/minimized restore, Peek lifecycle, all presets and
-effect switching, appearance/draft preservation, bounds and theme restart.
+The shell, floating tools, local data services, normal/private draft isolation,
+failed-send retry, themes, effects, Appearance, shortcuts and shared states are
+substantially implemented. Steps 01/53 retain earlier scoped acceptance. Most
+other workspaces remain unavailable scaffolds; domain records alone do not make
+Documents, Brain, Notes, Tasks or Gallery implemented product tools.
 
-Additional temporary probes used isolated SQLite and QSettings files, without
-changing production data or source. Inspected rendered Home, Theme Customize,
-Settings Appearance/Shortcuts, collapsed sidebar and Large/Roomy layout. Captured
-Home explicitly at 1720×900; initial captures were clamped by the offscreen screen
-to 1100×800, and minimum-size captures were 1100×680. Captures are not native
-window-manager or fractional-scale evidence.
+Immediate findings: export can overwrite active storage; R2 reset discards an
+excluded Nobody session; incomplete/future-schema/null-ID imports are accepted;
+credential-bearing endpoint values reach storage/export. Further tasks cover
+uncaught read/validation errors, invalid effect preferences, empty-session
+restoration, theme errors and incomplete packaging. None is fixed by this plan.
 
-Temporary evidence (not permanent project deliverables):
-- /tmp/otter-cove-progress-tests.log
-- /tmp/otter-cove-progress-smoke.log
-- /tmp/otter-cove-progress-home-1720.png
-- /tmp/otter-cove-progress-custom.png
-- /tmp/otter-cove-progress-settings.png and /tmp/otter-cove-progress-shortcuts.png
-- /tmp/otter-cove-progress-minimum-large.png and /tmp/otter-cove-progress-collapsed.png
-- /tmp/otter-cove-progress-inspect.py (probe source)
-- /tmp/otter-cove-progress-before.json (130-file Current Build hash inventory)
-Inventory digest: 87c070c48455e396714eb468e815e43830d86cda4e50140c76ef6ed7d1d25469
-These paths are temporary; rerun and archive evidence during a later authorized
-acceptance pass. The observations and results are recorded here for durability.
+## Scope and completion rules
 
-Previously recorded evidence in docs/acceptance/step-01.md and step-53.md reports a
-prior 26/26 target run and scoped acceptance for shell/shared states. Preserve
-those records as prior evidence. The later 64/65 More Colors test failure noted
-in docs/FEDORA_CHECKLIST is not reproduced: its corrected test passes in this run.
+1. Keep the existing architecture. Qt presentation consumes local services;
+   repositories own SQL. `main.py` remains bootstrap, `app.py` composition, and
+   external adapters belong behind service boundaries.
+2. The selected direction is useful local GUI behavior without model work. Use
+   labelled deterministic fixtures only where the feature criteria allow them.
+   No inference, real search, shell/agent execution, mail delivery, authentication,
+   CalDAV synchronization or AI image processing is implied by a demo.
+3. Preserve stable IDs, transactional migrations, atomic valid exports and
+   memory-only Nobody data. Structured credentials never belong in ordinary
+   SQLite/QSettings/export/logs; OC-04 repairs that existing boundary.
+4. Run tests/demo flows with disposable local data. Add focused regressions for
+   reproduced defects and reuse existing coverage for stable behavior.
+5. A visible control either works or explains its unavailability. Tables,
+   scaffolds, documentation and unrelated passing tests never establish Done.
+6. A feature is Done only after its criteria, applicable dependency gates and
+   shared acceptance requirements have actual evidence. Record accepted subsets
+   while leaving broader steps Partial. Never lower thresholds to obtain a pass.
+7. Preserve dated evidence. Report source revision, runtime, Qt platform, skips,
+   actions and outcomes. Offscreen checks do not substitute for native evidence.
+8. Every materially modified code file meets AGENTS.md's explanatory standard;
+   review documentation accuracy and run relevant checks after comments are added.
 
-## PROGRESS ASSESSMENT
+Status meanings: **Not started/scaffold** = no dedicated workflow;
+**Data/preference foundation** = records/settings without the feature;
+**Partial** = implementation remains; **Implemented, acceptance pending** =
+remaining native/visual/performance gates; **Scoped accepted** = only the named
+historical or current subset; **Done** = all applicable criteria evidenced.
 
-Shared foundations are substantially implemented and automated regression is
-green. Settings now has real Appearance and Shortcuts pages. Theme work now
-includes persistent customization, expanded colors, harmony Apply/Reset, density,
-typography, effect controls and named theme import/export. The dark Customize
-viewport defect is resolved in the observed render. Floating-window lifecycle and
-geometry have dedicated passing checks. Sidebar/composer line icons are present;
-Settings/profile entry points remain reachable when collapsed.
+## Execution order
 
-Persistence now includes SQLite repositories/services, migrations and local JSON
-operations. Chat writes normal messages and restores the latest stored session;
-Nobody records are kept out of SQLite/export. This is meaningful implementation,
-but not complete session management or incognito UX.
+This order replaces the former R1–R6 and model-first A–G sequence. Feature
+`Depends on` declarations remain integration/completion gates. They do not prevent
+independent local work on a named subset; they do prevent claiming unsupported
+full completion. The task dependencies below govern actual coding order.
 
-Most product workspaces remain unavailable scaffolds: Search, Email, Tools,
-Brain, Calendar, Compare, Cookbook, Research, Gallery, Library, Notes, Tasks,
-Account and Models. Data tables/services for several domains do not count as
-finished GUI modules. Settings has no model/default/search/integration pages yet.
+| Area / order | Work | Exit and later boundary |
+|---|---|---|
+| 1a. Protect current data | OC-00, then OC-01–04; review corrected R2 implementation | Safe destinations, truthful reset/import scope, validated snapshots and credential rules |
+| 1b. Complete existing foundation and chat | OC-05–22 using their dependency table; OC-20 is continuous, OC-21 can begin early | Current UI reliable, maintainable and reproducible |
+| 1c. Foundation desktop acceptance | OC-23 using the shared gate | Native evidence for the selected foundation; not all 55 features |
+| 2. Sessions and local conversation | SC-1; CU-0/CU-1 shared popover before SC-2; SC-2–6 | Session CRUD/browser, privacy integration, safe fixtures, local history search, sensitive/status presentation |
+| 3. Local composer utilities | CU-2–6 after session draft contracts; reuse CU-0/CU-1 | Local selections and labelled Web/Shell simulations; no attachment consumption claim |
+| 4. Documents and Library | 28 → 27 → complete 11's Library provider and 07's Documents picker | Local text/Markdown editing, unsaved protection, shared stable IDs and search; Prompt gate remains |
+| 5. Brain records and controls | 13 → 14 → 15 → 16 | Local memories/skills/import-export and explicitly simulated audit/extraction; recheck private exclusion |
+| 6. Local productivity | Define the local/non-AI slice of 44; 31 → 30 → 12 → 45 → 46 → 17, applying each feature's dependency gates | Local tasks/notes, fixture email, simulated reminders, calendar/basic ICS; no live delivery/sync |
+| 7. Gallery and conventional editor | 21 → 22 → 23 → 25 → 24 | Local import/albums, document/canvas/layers/history and ordinary editing; AI-labelled controls remain fixtures |
+| 8. Demo identity and study | 51 → 52 | Explicitly simulated account/2FA/profile flows and meaningful local Study Mode |
+| Every completed area | Shared acceptance gate on the feature changes and affected foundation contracts | Fresh evidence and accurate Partial/Done boundaries |
 
-## PRIORITY FINDINGS — FIX IN A LATER IMPLEMENTATION PASS
+Areas 1–3 have the execution-ready tasks below. Areas 4–8 retain their full
+feature deliverables/criteria in the catalogue; expand the selected area's
+implementation packages **inside this plan** before starting it. Do not infer a
+complete implementation design for them from their storage tables or recreate
+separate competing plans. This replacement preserves their scope without claiming
+that the earlier preparation contained detailed task breakdowns for all eight.
 
-P1 — Failed send loses draft (04/10/54)
-Reproduction: inject DataStoreError from SessionService.add_message, type a
-message, submit. Actual: the editor becomes empty even though storage failed.
-Cause: PromptBox.submit clears before the receiving handler accepts the write.
-Required outcome: retain/recover draft, mode and attachments; show an error;
-retry creates one accepted message. Add a focused failure-and-retry check.
+### Deferred model and mixed work
 
-P1 — Mode transition mixes session views (06/10/49)
-Reproduction: submit normal text; invoke Toggle Nobody; submit private text.
-Actual: separate normal/private records exist, but both labels remain in the
-same message view. Status text stays "Local GUI session · persistent storage".
-The probe verified only the normal text in the normal session's stored messages;
-this observation is not evidence of a private-message disk leak.
-Required outcome: explicit transition, one active session view, truthful persistent
-indicator/status, and no implicit copying of content between modes.
-Resolution: implemented in the current R1 branch with isolated normal/Nobody
-session views, drafts and storage-status text; both transition directions have Qt
-regression coverage.
+| Feature IDs | Boundary |
+|---|---|
+| 05, 40–42 | Model registry, selector, defaults and probes deferred; closed PR #7 needs future rebase/review |
+| 18–20, 43 | Model comparison, model management, research and provider settings deferred |
+| 04 | Autosizing/drafts/local storage can improve now; final selected-model/request/attachment contract remains later |
+| 09 | Prompt editing/CRUD may be scoped later; full Prompt Studio requires model selection and request consumption |
+| 26, 29 | Mask/editor preparation and report presentation may advance later; model inpaint and research-artifact provenance remain gated |
+| 44 | Local settings/contact-file work must be scoped separately from model/agent integrations; combined step stays Partial |
 
-P1 — Transient session disposal and draft ownership incomplete (03/06/10)
-Reproduction: create a private session, then New Chat. The service still retains
-one private session; separately, New Chat retains a previously typed draft.
-Required outcome: a deliberate close/switch policy, disposal of closed private
-records, and session-scoped drafts with explicit unsaved-edit handling.
-Resolution: implemented in the current R1 branch. New Chat clears pending text,
-disposes the live Nobody record/messages and returns to a blank persistent slot;
-privacy-mode switches restore the draft owned by each selected session.
+No model step is reopened merely to satisfy an incidental dependency of a local
+subset. When model work is selected later, update this plan explicitly and retain
+the privacy and service boundaries.
 
-P2 — Large-text Nobody control clips (02/04/35)
-Observed: 1100×680, Sans Serif, Large, Roomy; fixed 82-pixel Nobody button truncates
-its label. The problem remains visible with the sidebar collapsed.
-Required outcome: content/font-aware sizing; inspect all similarly fixed controls
-at supported text sizes/densities. Scrolling long panels is acceptable; clipped
-control labels or unreachable actions are not.
-Resolution: the Nobody control now uses content-aware minimum sizing. Its
-1100×680 Sans Serif/Large/Roomy offscreen render and size-hint regression pass;
-broader native Theme/Settings inspection remains under step 35.
+## Cross-area completion boundaries
 
-P2 — Preferences ahead of actual functionality (47/48/49)
-Sensitive blur is a stored widget property, not a sensitive-span renderer. Status
-summary is a static label, not process presentation. Web Search routes to the
-conversation Search scaffold. Clearly explain/disable unavailable behavior until
-its actual consumer is implemented; do not imply protection or a working tool.
-Resolution: the current R1 branch removes the inert blur property, disables and
-labels sensitive blur, Web Search and Shell controls as unavailable, and renames
-the implemented summary control to Session storage status. Stored future defaults
-remain available to their eventual consumers without implying current behavior.
+| Step / contract | Can be evidenced now | Gate that remains |
+|---|---|---|
+| 03 | Empty/restored/new session and responsive sidebar layout | Re-run Notes-dock layout after 30 exists |
+| 04 | Editor sizing, text/mode retention and local submission retry | Selected model and accepted attachment/request record |
+| 06 | Private disk/export/search exclusion, transitions and disposal | Revalidate with CU attachments and Brain extraction consumers |
+| 07 | Popover, file/workspace selection and transient chips | Documents and Prompt must open their actual modules |
+| 08 | Complete labelled simulated actions and visibility behavior | Record its local subset; retain unresolved prerequisite integration gates |
+| 11 | Persistent conversation history provider | Library metadata/content provider from 27/28 |
+| 47 | Existing Appearance behavior | Enable Sensitive blur/status/Web/Shell controls only when their actual consumers pass |
+| 50 | Existing commands and editor | Activate Favourite/Delete only after SC workflows are real |
+| 55 | Selected foundation or feature-area matrix | Full release requires all selected features; explicitly list deferred IDs |
 
-No fixes were applied in this review. Passing the existing suite does not resolve
-these separately reproduced gaps.
+### Session and draft ownership contract
 
-## SCOPE AND COMPLETION RULES
+| Action | Required ownership/result |
+|---|---|
+| Ordinary persistent session switch | Save outgoing transient draft/view state; load incoming only on success |
+| Normal/private switch after messages | Explicit switch-and-retain, new-session or cancel choice; no copying between modes |
+| New Chat from a concrete persistent session | Retain its session-owned draft for return and create a blank pending normal slot |
+| New Chat from a pending slot | Explicit New Chat discards pending text/selections under its documented UI policy |
+| New Chat or Close Nobody | Dispose the private message/draft/status/selection aggregate and return to a valid normal view |
+| Durable-data reset/import | Preserve excluded Nobody state; refresh/invalidate affected durable IDs and protect ordinary unsaved drafts explicitly |
+| Application close/restart | Dispose all private state; restore durable content only; unsent drafts remain process-local unless scope is explicitly revised |
 
-The milestone remains a working local GUI: real local files, editing, persistence,
-themes and desktop interactions. External inference, search, email delivery,
-CalDAV, authentication, agent execution and AI image operations use visibly
-labelled deterministic demo adapters. Real backend integration is separate work.
+Do not silently use the New Chat operation to refresh a view after reset/import.
+Draft ownership starts in separate pending normal/private slots before a record
+ID exists, then follows the concrete session ID. Later attachment state joins
+the same aggregate rather than introducing another owner.
 
-Status meanings:
-- Accepted baseline: scoped earlier acceptance plus current regression evidence;
-  preserve it, while retaining shared release obligations under 55.
-- Implemented; acceptance pending: substantial behavior and passing checks exist;
-  listed native/visual/performance conditions still block full completion.
-- Partial: behavior exists but known implementation work remains.
-- Data foundation / Preference / UI only: infrastructure or controls exist without
-  the complete feature behavior.
-- Scaffold: unavailable placeholder route only, even if it demonstrates states.
-- Not started: no dedicated implementation found.
-- Done: all step conditions plus common gates have executed evidence. Never infer
-  Done from a visible button, a table or a passing unrelated test suite.
+## Existing implementation tasks
 
-Common gates for every step:
-1. Visible controls work or explain why unavailable; mock operations are labelled.
-2. Exercise applicable happy/empty/invalid/loading/error/cancel/retry states.
-3. Persistent state passes close/reopen AND restart; private data obeys its policy.
-4. Keyboard focus/names, themes, 1100×680 minimum size and scaling are usable.
-5. State belongs to models/services and shared commands; avoid competing stores.
-6. Record build, environment, actions, fixtures and actual results; unresolved
-   conditions remain open. Offscreen is supplementary to native desktop evidence.
-7. Use focused behavioral tests for new state/error logic and manual visual checks
-   for appearance. Do not weaken assertions or lower thresholds just to pass.
+OC IDs are retained for continuity with the 23 September findings. P0 means data
+protection before landing R2; P1 means current reliability/usability before feature
+expansion; P2 means maintainability/distribution/evidence before scoped release.
 
-## NEXT WORK PACKAGES
+| ID | Priority | Task | Depends on |
+|---|---|---|---|
+| [OC-00](#oc-00) | First | Reconcile baseline and current documentation | — |
+| [OC-01](#oc-01) | P0 | Prevent exports overwriting application storage | [OC-00](#oc-00) |
+| [OC-02](#oc-02) | P0 | Preserve excluded Nobody state during import/reset | [OC-00](#oc-00) |
+| [OC-03](#oc-03) | P0 | Enforce a complete, typed import contract | [OC-00](#oc-00) |
+| [OC-04](#oc-04) | P0 | Enforce credential rules at existing storage boundaries | [OC-03](#oc-03) |
+| [OC-05](#oc-05) | P1 | Make expected storage/read failures recoverable | [OC-03](#oc-03) |
+| [OC-06](#oc-06) | P1 | Recover invalid preferences and report save failures | [OC-00](#oc-00) |
+| [OC-07](#oc-07) | P1 | Bound local-data work and keep the GUI responsive | OC-01–05 |
+| [OC-08](#oc-08) | P1 | Harden theme file handling and saved-theme state | OC-01, OC-06 |
+| [OC-09](#oc-09) | P1 | Correct empty-session restoration | [OC-05](#oc-05) |
+| [OC-10](#oc-10) | P1 | Make current session/private lifecycle explicit | OC-02, OC-09 |
+| [OC-11](#oc-11) | P1 | Make the existing composer usable for long drafts | [OC-10](#oc-10) |
+| [OC-12](#oc-12) | P1 | Render existing message text safely and accessibly | OC-05, OC-09 |
+| [OC-13](#oc-13) | P1 | Finish shell and floating-tool interaction | [OC-06](#oc-06) |
+| [OC-14](#oc-14) | P1 | Align navigation and commands with actual capabilities | OC-10, OC-13 |
+| [OC-15](#oc-15) | P1 | Complete keyboard, focus and responsive layout checks | OC-08, OC-11–14 |
+| [OC-16](#oc-16) | P1 | Finish theme and appearance consistency | OC-08, OC-15 |
+| [OC-17](#oc-17) | P1 | Verify animation lifecycle and measure performance | OC-06, OC-13, OC-16 |
+| [OC-18](#oc-18) | P1 | Bound feedback and retain usable error details | OC-05, OC-15 |
+| [OC-19](#oc-19) | P1 | Complete shutdown and retained-resource cleanup | OC-07, OC-10, OC-17–18 |
+| [OC-20](#oc-20) | P2 | Consolidate ownership and document changed boundaries | Throughout; close after OC-19 |
+| [OC-21](#oc-21) | P2 | Add reproducible CI and truthful validation output | OC-00; CI scaffold can start early |
+| [OC-22](#oc-22) | P2 | Repair packaging and provide a Fedora launch path | OC-19–21 |
+| [OC-23](#oc-23) | P2 | Complete scoped native acceptance and closeout | OC-01–22 |
 
-R1. Correct the four reproduced session/layout findings above. Extend the current
-    tests with failure/retry, normal/private transitions, private disposal and
-    session-draft ownership. Inspect large-text controls visually. Exit: each
-    reproduction now satisfies its stated outcome and the existing 65 still pass.
-R2. Finish foundation acceptance, without rebuilding implemented controls. Verify
-    real drag/resize, dialogs, theme/shortcut restart, focus and display scaling;
-    add local-data management/recovery UI under 54. Measure animation under 36.
-    Exit: distinguish any remaining implementation defects from desktop evidence.
-R3. Add model configuration and capability defaults (40/41/42), then selector (05)
-    and shared popover/composer contracts (07/08/04). Keep unavailable integrations
-    labelled; use the existing Settings window and SQLite services.
-R4. Complete session UX and documents (10/03/06/28), Prompt (09), Library/Search
-    (27/11), and sensitive/process rendering (48/49). Session integrity fixes in
-    R1 do not require waiting for the entire feature to be complete.
-R5. Build the remaining personal/research/Gallery modules in the dependency order
-    below; reuse working state, feedback, command, theme and data foundations.
-R6. Complete step 55 release checks. Do not turn the native checklist into a claim
-    of successful execution merely because an offscreen smoke run passes.
+<a id="oc-00"></a>
 
-## FEATURE DEPENDENCIES AND MILESTONE ORDER
+### OC-00 — Establish the implementation baseline
 
-Retained from the accepted plan; foundation entries already implemented need
-verification/targeted completion, not a fresh implementation. Each feature's
-Depends on line is a full-completion gate, not a prohibition on independent work.
+**Current state:** documentation consolidation is complete. Runtime fixes and
+reference-media recovery are still pending; this task is not fully accepted.
 
-A: 54, 01, 53, 39, 32, 33, 47, 35, 36, 38, 34, 37, 50.
-B: 40, 41, 42, 43, 44, 46, 02, 51, 52.
-C: 10, 03, 06, 28, 07, 08, 05, 04, 09, 27, 11, 48, 49.
-D: 13, 14, 15, 16, 31, 30, 12, 45, 17.
-E: 18, 19, 20, 29, 21, 22.
-F: 23, 25, 24, 26.
-G: 55 and regression of all release-selected features.
+**Work**
 
-A exit: reliable shared services/windows, complete foundation flows and evidence.
-B exit: model/settings records update consumers, persist and handle invalid state.
-C exit: session privacy/drafts, local documents, prompts and search work end to end.
-D exit: personal workspaces retain consistent local state and simulated jobs.
-E exit: comparison/research artifacts and Gallery metadata are consistent.
-F exit: image project round-trip, composition/history and mock result application.
-G exit: documented native matrix, reference comparison and performance targets.
+1. Recheck `main` and PR #6 before coding. Review #6 against OC-01–04 and preserve
+   its nested-JSON validation fix. Identify the existing base and R2 candidate
+   to fix; land that code only after OC-01–04, review and checks.
+2. Use isolated SQLite/QSettings, record the exact commit/environment, and run the
+   complete automated suite and offscreen smoke without skipped Qt coverage.
+3. Locate supplied original visual references. `docs/reference/` is absent from
+   the reviewed source. Restore originals or record their real accessible
+   location; keep parity checks blocked if unavailable. Do not invent references.
+4. Update STATUS and the evidence ledger with the selected source and actual
+   results. The historical R1 defects already fixed on main must not be reopened
+   merely because an old review still describes them.
 
-Original screenshots and screencasts are stored once under docs/reference/ and
-remain the appearance/interaction target.
-This pass reuses the earlier reference review; it is not a new exhaustive
-pixel-parity audit. Use original full-resolution reference files for comparison.
+**Accept when:** the reviewed base and R2 candidate are identified, with current
+checks, known defects, reference availability and remaining native gates explicit.
+Baseline identification permits OC-01–04 to begin; it does not claim those fixes
+are already complete.
+**Maps to:** governance, 01, 54, 55.
 
-## FEATURE STEPS AND ACCEPTANCE CONDITIONS
+<a id="oc-01"></a>
 
+### OC-01 — Protect storage from export destinations
+
+**Evidence:** `LocalDataService.export_json(data.store.path)` replaces the live
+SQLite file with JSON. Atomic replacement protects an ordinary destination from
+partial writes, but does not make that destination safe.
+
+**Work**
+
+1. Validate destinations before creating directories or temporary files. Reject
+   the active database, its WAL/SHM files, and application preferences. Apply the
+   same protected-target policy to theme export where the shell knows these paths.
+2. Resolve symlinks and compare existing file identities where applicable so an
+   alternate path cannot bypass protection. Do not depend on a dialog extension.
+3. Return a typed, readable error. Keep current export atomicity for valid targets;
+   ensure failure leaves an existing destination and the active store intact.
+
+**Accept when:** direct, alias/symlink and sidecar targets are rejected before
+mutation; the database reopens with its original records; normal export succeeds.
+Use disposable stores for every destructive-path test. **Maps to:** 37, 54.
+
+<a id="oc-02"></a>
+
+### OC-02 — Preserve the state excluded by import/reset
+
+**Evidence:** PR #6 says Nobody is outside reset/import, then calls
+`ChatSurface.reset_chat()`, which disposes the private session and its draft.
+
+**Work**
+
+1. Give durable-data replacement its own chat refresh operation. Preserve live
+   Nobody messages, drafts and mode because the existing confirmation excludes
+   them. Do not reuse New Chat's private-session disposal operation.
+2. Invalidate IDs, message views and cached drafts belonging to deleted durable
+   records. Restore an appropriate imported normal session or a truthful empty
+   normal view without changing a currently active private view.
+3. Protect pending normal drafts through an explicit confirmation/preservation
+   policy. Keep affected/excluded reports consistent across service, dialog and UI.
+4. Ensure failed and cancelled operations leave all views and draft state intact.
+
+**Accept when:** UI-level tests cover reset and import in normal and private mode,
+including a live private message/draft and stale normal IDs. Excluded private
+state survives; a later explicit New Chat still disposes it. **Maps to:** 06, 54.
+
+<a id="oc-03"></a>
+
+### OC-03 — Validate complete import snapshots before replacement
+
+**Evidence:** both reviewed code revisions accept future `schema_version=999`,
+missing table collections and null IDs. PR #6 normalizes malformed nested JSON,
+but a session title array still raises `AttributeError`.
+
+**Work**
+
+1. Define supported export/schema combinations and normalize supported older
+   snapshots explicitly. Require all tables for a full replacement snapshot;
+   empty tables must be present as lists. A deliberately partial import needs a
+   separate format/mode rather than silently treating absence as deletion.
+2. Validate field types, nonempty stable IDs, relationships, ordinal uniqueness,
+   allowed roles/states, booleans, timestamps and finite numeric ranges. Reject
+   missing/null identity values instead of generating new IDs during restore.
+3. Decode and validate nested metadata/config/tag structures before mutation,
+   with table/row/field errors. Reuse repository/service validation for direct
+   writes so accepted records have the same meaning through either entry point.
+4. Preserve #6's JSON-decoding fix. Wrap expected malformed values in
+   `DataValidationError`; keep transaction rollback as the final safety net.
+5. Preview counts and replacement scope before confirmation. Import the exact
+   validated snapshot so a file changing after preview cannot change the operation.
+
+**Accept when:** malformed, incomplete, future-schema and duplicate/reference
+fixtures reject with visible errors and unchanged prior data; supported exports
+round-trip IDs, timestamps, order and fields exactly. **Maps to:** 54.
+
+<a id="oc-04"></a>
+
+### OC-04 — Enforce the existing credential-storage contract
+
+**Evidence:** a synthetic user/password URL and credential query survive the
+existing `ModelService.create()` path into SQLite and JSON export. The generic
+policy inspects keys, not credentials embedded in URL values; export also sees
+nested metadata as serialized JSON strings.
+
+**Work**
+
+1. For existing structured endpoint/config fields, reject parsed URL userinfo and
+   credential-bearing query parameters before storage or import. Validate both
+   service and lower-level write paths used by import.
+2. Inspect decoded structured metadata/config during export as a final guard.
+   An unsafe existing record should block export with a field-level remediation
+   message that does not echo its secret. Do not silently delete stored records.
+3. Replace overly broad key-substring decisions with a documented structured-field
+   policy that still rejects credentials but permits legitimate numeric settings
+   such as token limits. Keep ordinary document/message text semantics explicit;
+   this task is not a general secret detector or content scrubber.
+4. Use synthetic credentials and test create, import and export, including nested
+   structured values. Carry these requirements into the later model plan.
+
+**Accept when:** credential-bearing structured records cannot enter or leave the
+ordinary store, while legitimate non-secret settings remain usable. This is a
+repair to existing persistence; no model UI, probes or provider are added.
+**Maps to:** 54; future 40–44 reuse the boundary.
+
+<a id="oc-05"></a>
+
+### OC-05 — Make expected storage and read failures recoverable
+
+**Evidence:** non-UTF-8 local-data input escapes as `UnicodeDecodeError` even in
+#6. Repository reads often issue SQL without translating errors, whereas chat
+handlers expect `DataStoreError`. `get_session()` is outside the render try block.
+
+**Work**
+
+1. Translate decoding failures at the file boundary and expected SQLite failures
+   at the repository/store boundary. Preserve causes for diagnosis without
+   exposing content or credentials in user messages.
+2. Guard session lookup and message reads as one operation. Preserve the current
+   draft and distinguish load failure from a genuinely empty conversation.
+3. Defer initial session loading until the shell's error consumer is connected,
+   or return initialization issues for the shell to present after construction.
+4. Validate corrupt decoded row metadata instead of allowing later `.get()` or
+   conversion failures. Never silently replace the database on a read failure.
+
+**Accept when:** unreadable/invalid-encoding imports, closed/locked stores and
+corrupt row metadata produce actionable feedback; no expected exception escapes a
+Qt handler, draft vanishes or failed load is presented as empty success.
+**Maps to:** 03, 10, 53, 54.
+
+<a id="oc-06"></a>
+
+### OC-06 — Recover invalid preferences and report persistence failures
+
+**Evidence:** stored effect quality `inf` causes `OverflowError` during
+`MainWindow` construction. Runtime effect setters enforce minimums but no upper
+bounds. QSettings exposes status, but shell save flows do not report it.
+
+**Work**
+
+1. Centralize effect defaults and finite ranges; reuse them for saved preferences,
+   runtime changes and theme bundles. Reject/recover NaN, infinity, excessive
+   values and invalid colors before effects allocate particles.
+2. Validate saved booleans/enums/shortcut data consistently. Recover per field to a
+   documented default and report a concise warning after the UI is available.
+3. Check QSettings sync/status at persistence boundaries. Present an unsaved state
+   and recovery path instead of reporting successful saving after an access error.
+
+**Accept when:** invalid settings cannot crash startup or cause unbounded particle
+allocation; recovered values are visible; simulated write errors do not claim
+durability. Restart tests cover supported extremes. **Maps to:** 35–37, 47, 50, 54.
+
+<a id="oc-07"></a>
+
+### OC-07 — Bound data operations and avoid GUI stalls
+
+**Evidence:** import/export/read work is synchronous in Qt handlers; imports read
+the complete file, and SQLite's busy timeout is five seconds. Actual large-data
+latency has not been measured in this review.
+
+**Work**
+
+1. Measure a representative populated store, large supported import and held
+   writer lock. Set documented file/record limits based on supported use cases.
+2. Keep operations exceeding PLAN's 100 ms GUI-blocking budget off the event
+   loop. Use a serialized worker with its own SQLite connection; never share the
+   current connection across threads or allow concurrent destructive operations.
+3. Use a consistent read transaction for multi-table snapshots. Carry a validated
+   import snapshot from preview to apply; bound memory or stream where justified.
+4. Expose busy/progress/failure states, block duplicate actions, and define the
+   cancellation boundary before commit. Ignore stale UI completions safely.
+
+**Accept when:** the UI remains responsive during supported I/O and a lock wait;
+cancel/retry/shutdown cannot partially import or export; limits give useful errors.
+Do not add a job framework beyond the measured requirement. **Maps to:** 53, 54.
+
+<a id="oc-08"></a>
+
+### OC-08 — Harden theme interchange and saved-theme state
+
+**Evidence:** non-UTF-8 theme files raise an uncaught `UnicodeDecodeError`.
+The atomic writer creates the directory outside its error conversion, and assigns
+the temporary cleanup path only after writing/flushing succeeds. Boolean fields
+use truthiness, so a string such as `"false"` is interpreted as true.
+
+**Work**
+
+1. Validate strict bundle types and supported versions. Convert encoding,
+   directory, write, flush and replace failures to `ThemeBundleError`.
+2. Track the temporary file as soon as it exists and clean it on every failure.
+   Keep target bytes, active theme and saved catalog unchanged after rejection.
+3. Confirm a selected saved theme has consistent edit/restart semantics for
+   typography, effect settings and overrides. Document whether edits are a working
+   override or explicitly require re-saving; make the UI match that decision.
+4. Verify save/replace/import cancellation and duplicate handling; use typed
+   duplicate errors rather than matching exception text where practical.
+
+**Accept when:** invalid encoding/types and injected write failures give readable
+feedback without leftovers or mutation; named theme round-trips and subsequent
+edits match the documented behavior. **Maps to:** 33–37.
+
+<a id="oc-09"></a>
+
+### OC-09 — Correct restored empty-session presentation
+
+**Evidence:** an existing zero-message session restores with the hero hidden.
+Startup unconditionally switches to the message view; the normal render path
+already checks message count. Failed first sends can leave such an empty session.
+
+**Work**
+
+1. Use one rendering path for startup and session transitions. A successfully
+   loaded zero-message session displays the configured welcome/empty state.
+2. Restore its ID/title while retaining correct normal/private indicators.
+3. Keep first-send failure/retry behavior and avoid creating a second session or
+   clearing the draft when message persistence fails.
+
+**Accept when:** fresh, restored empty, populated and failed-first-send fixtures
+show the correct view; the first accepted message transitions once. **Maps to:** 03, 04, 10.
+
+<a id="oc-10"></a>
+
+### OC-10 — Make the current private-session lifecycle explicit
+
+**Evidence:** mode switching and draft isolation exist. The Nobody button lives
+inside the hero, which hides after sending, while status summaries can be hidden.
+The header retains a private label, but a persistent mouse-accessible transition
+control and message-bearing transition choice still need completion.
+
+**Work**
+
+1. Provide a persistent, keyboard-accessible session privacy indicator/control
+   outside the empty hero. Its meaning must remain visible even if optional status
+   summaries or the welcome area are hidden.
+2. Apply PLAN's explicit transition choice after messages exist. Switching to a
+   separate normal/private session must never silently convert private content.
+3. Keep New Chat's documented discard semantics clear; purge private records and
+   drafts on explicit private close and application teardown. Remove cached
+   durable drafts when their records are deleted/replaced.
+4. Reuse the session ownership contract below. Keep unsent drafts transient
+   across process restart unless the canonical scope is intentionally changed.
+
+**Accept when:** normal/private transitions are usable with pointer and keyboard
+after messages exist; repeated transitions, New Chat and reset/import preserve or
+dispose exactly the intended records. No private content reaches ordinary data,
+export, diagnostics or future persistent search. **Maps to:** 03, 06, 47.
+
+<a id="oc-11"></a>
+
+### OC-11 — Improve the existing composer for long drafts
+
+**Evidence:** the composer is fixed at 96 px, the editor is capped at 42 px and
+its scrollbar is always hidden. Its placeholder still says “Message Odysseus…”.
+
+**Work**
+
+1. Grow the editor to a documented maximum, then enable scrolling. Derive layout
+   from typography/density and available workspace height; keep send/mode controls
+   reachable with a long multiline paste.
+2. Preserve the 720 px reference width when space permits, full-width preference
+   and the 1100×680 supported minimum. Fix fixed spacers where they obstruct this.
+3. Retain Enter/newline, Ctrl+Enter/send, whitespace rejection, exact draft/mode
+   retention on failure and one-time clearing after success.
+4. Correct branding and make local storage behavior and unavailable model selection
+   clear. Do not enable unsupported Web/Shell/model behavior.
+
+**Accept when:** long text, Unicode, multiline paste and keyboard editing work at
+minimum size and Large/Roomy; existing failed-send tests remain valid. Canonical
+step 04 stays Partial until the future request/attachment contract exists.
+**Maps to:** 04, 35, 47.
+
+<a id="oc-12"></a>
+
+### OC-12 — Make existing message rendering explicit and safe
+
+**Evidence:** local messages are passed directly to `QLabel` with default
+`AutoText`; text format, copy policy and keyboard selection are not explicit.
+This is a rendering trust-boundary observation, not evidence of script execution.
+
+**Work**
+
+1. Render existing user text as literal plain text, including HTML-looking input.
+   Set format deliberately for user-supplied titles and feedback too. Introduce
+   sanitized rich content only through SC-4 below.
+2. Add keyboard selection/copy and visible role/time presentation without deriving
+   state from widget text. Keep stored content unchanged by presentation.
+3. Verify long unbroken text, code-like text, bidirectional text and a 200-message
+   fixture. Preserve reading position; scroll only while following the end.
+4. Make rebuild/reopen ordering deterministic and avoid accumulating deleted
+   message widgets or losing the draft during a view refresh.
+
+**Accept when:** markup displays literally, no user text triggers resource loading,
+copy returns the intended displayed content, and the 200-message fixture stays
+usable within PLAN's interaction target. Sensitive spans, status fixtures and
+streaming belong to SC-4/SC-6 below; do not claim them complete. **Maps to:** 10, 53.
+
+<a id="oc-13"></a>
+
+### OC-13 — Finish shell and floating-tool behavior
+
+**Evidence:** the framework already has substantial tests. Native drag, focus,
+Peek and display-change evidence remain pending.
+
+**Work**
+
+1. Reuse the existing manager; verify singleton open/focus, close/reopen state,
+   minimized restoration and independent normal/minimized geometry.
+2. Test all implemented resize affordances and pointer dragging with overlapping
+   tools, minimum shell size, host resize and changed display bounds.
+3. Preserve the active chat/draft and ensure titlebar, close and resize controls
+   remain reachable. Define sensible behavior when the desktop provides fewer
+   logical pixels than the documented minimum, especially at 200% scaling.
+4. Repeat ten tools' lifecycle and twenty theme/session changes, recording widget,
+   signal and timer growth. Fix reproduced leaks or unreachable controls only.
+
+**Accept when:** existing automation passes and native pointer/focus evidence
+confirms the framework's contracts on supported desktops. **Maps to:** 01, 38, 39.
+
+<a id="oc-14"></a>
+
+### OC-14 — Align sidebar, commands and actual capability
+
+**Evidence:** registries exist, but the sidebar constructs from the default route
+registry while `MainWindow` accepts an injected registry. Commands use
+window-wide shortcuts; ordinary text-editor conflicts need native verification.
+
+**Work**
+
+1. Pass one route registry through the shell/sidebar/Appearance consumers. Make
+   available/scaffold state and active state agree after open, hide and close.
+2. Verify rapid collapse/expand settles at the requested width and persists;
+   keep Settings and New Chat accessible when optional navigation is hidden.
+3. Audit command contexts and rebinding against ordinary editing keys. Reject or
+   explicitly scope conflicts instead of silently hijacking typing/copy/undo.
+4. Keep command labels/tooltips synchronized and feature commands unavailable
+   until their consumers exist. No completion credit for a scaffold route.
+
+**Accept when:** custom-registry, rapid-toggle, restart and disabled-command tests
+pass; native keyboard checks preserve expected editing behavior. **Maps to:** 02, 47, 50.
+
+<a id="oc-15"></a>
+
+### OC-15 — Complete accessibility and responsive layouts
+
+**Evidence:** some names, focus handling and announcements exist; the full native
+matrix remains unverified.
+
+**Work**
+
+1. Audit icon-only controls, labels, tab order, focus visibility, activation,
+   Escape, dialog focus return and keyboard access to important errors.
+2. Check Home/chat, Theme, Settings, floating titlebars, menus and confirmations at
+   Small/Default/Large × Compact/Comfortable/Roomy and minimum/default/maximized
+   sizes. Use long theme names, titles and error messages.
+3. Verify native accessibility announcements and readable focus/selection/disabled
+   states in light and dark themes. Add scroll containers or adaptive sizing
+   where needed rather than shrinking text or clipping controls.
+
+**Accept when:** primary flows are possible without a mouse and no primary control
+is clipped/unreachable in the supported matrix. Record native checks separately
+from offscreen geometry assertions. **Maps to:** 01, 02, 35, 47, 50, 53, 55.
+
+<a id="oc-16"></a>
+
+### OC-16 — Finish theme and appearance consistency
+
+**Work**
+
+1. Check all 16 presets on mounted and newly opened surfaces. Review Light,
+   Copper, Ocean and Forest in matched states against available originals.
+2. Verify every semantic token and More Colors control, picker cancel, preset
+   reset semantics, neutral-input harmony preview/apply/reset and live updates.
+3. Verify all currently implemented Appearance toggles preserve session/draft
+   state and restart correctly. Keep Sensitive blur unavailable until step 48 has
+   a renderer/copy policy; Web/Shell visibility activation follows CU-5/CU-6.
+4. Check Frosted's documented translucent fallback for legibility. Consolidate
+   literal styling only where it defeats semantic tokens or live typography.
+
+**Accept when:** native visual/restart checks meet the selected requirements and
+intentional reference differences are recorded. Steps with deferred consumers
+remain Partial. **Maps to:** 32–35, 37, 47.
+
+<a id="oc-17"></a>
+
+### OC-17 — Validate animation lifecycle and performance
+
+**Work**
+
+1. Reuse PR #6's paint/frame instrumentation after its corrected implementation is integrated. Check ten effects, resize/switch,
+   control synchronization, Solid's stopped timer and user Pause independently of
+   visibility, application inactivity and minimized state.
+2. Run a native sweep to identify expensive effects. Record the required
+   60-second 1720×900 Balanced trace, including Leaves for comparison and the
+   slowest observed effect, with GPU/driver/scale/Qt/source identity.
+3. Target approximately 60 FPS and p95 frame interval ≤33 ms. Distinguish update,
+   paint, timer interval and actual presentation evidence. Do not present the
+   offscreen smoke or a short instrumentation check as performance acceptance.
+4. Profile only failures; optimize particle work/repaints or add an explicit,
+   tested lower-quality fallback. Verify Peek through lifecycle and theme changes.
+
+**Accept when:** the measured native target or documented accepted fallback holds,
+Pause is preserved, Peek remains visual-only, and hidden/closed states stop work.
+**Maps to:** 36, 38, 55.
+
+<a id="oc-18"></a>
+
+### OC-18 — Bound feedback and improve retained error details
+
+**Evidence:** feedback appends history without an automatic bound and stacks every
+toast vertically. The important-issue menu resolves an item when activated,
+instead of opening a separate readable detail view.
+
+**Work**
+
+1. Limit visible toasts and queue/coalesce repeated messages. Bound ordinary
+   history with a documented policy while retaining unresolved important issues.
+2. Provide an accessible detail view with separate resolve/dismiss controls.
+   Long recovery instructions should remain readable after a toast expires.
+3. Ensure repeated failures do not obscure the composer or steal focus; make
+   notification lifetime and cancellation belong to a clear QObject owner.
+
+**Accept when:** a burst of failures stays within host bounds, details remain
+available, dismissal differs from resolution, and retained memory is bounded by
+the documented policy. **Maps to:** 53.
+
+<a id="oc-19"></a>
+
+### OC-19 — Complete shutdown and resource cleanup
+
+**Evidence:** the shell stops the background and closes SQLite; private collections
+live in `SessionService`, while feedback/shared-state work uses delayed callbacks.
+The whole lifecycle needs a single explicit close contract.
+
+**Work**
+
+1. Give services/controllers an idempotent close/dispose path. Purge private
+   session/draft state on close without relying only on process termination.
+2. Cancel/settle pending operations before closing their database connections;
+   prevent delayed callbacks from updating destroyed widgets or closed stores.
+3. Commit geometry/preferences with visible failure handling and keep ownership
+   of injected services explicit for tests and callers.
+
+**Accept when:** closing during feedback/demo/data work produces no late writes,
+duplicate completion or unexpected process; a second close is safe; reopening
+uses valid persisted state and no private content. **Maps to:** 06, 39, 53–55.
+
+<a id="oc-20"></a>
+
+### OC-20 — Consolidate ownership and meet documentation requirements
+
+**Work**
+
+1. Keep `main.py` as bootstrap, `app.py` as composition, UI free of SQL/provider
+   calls, and existing local services in `core/data/`.
+2. During the above fixes, extract cohesive local-data-operation or presentation
+   coordination only where it reduces duplicated state/error handling in the now
+   large composition root. Avoid a broad rewrite or unused abstraction layer.
+3. Reuse typed validators, error types and shared registries. Avoid exposing new
+   repository internals through widget code.
+4. Apply AGENTS.md's module/class/function/lifecycle documentation standard to
+   every materially modified code file. Review accuracy after implementation.
+
+**Accept when:** each changed boundary has one owner and clear data/error/lifecycle
+contracts; relevant tests pass after documentation changes. This is part of each
+task's definition of done, with a final consistency pass. **Maps to:** [architecture contracts](docs/ARCHITECTURE.md).
+
+<a id="oc-21"></a>
+
+### OC-21 — Make verification reproducible and truthful
+
+**Evidence:** no `.github` workflow is tracked. The smoke prints “native” even
+when explicitly run offscreen; unit tests can skip Qt cases when PySide6 is absent.
+
+**Work**
+
+1. Add CI for the supported Python/Qt combinations, isolated full unittest suite
+   and offscreen smoke. OC-22 adds the installed-package check to this pipeline.
+   Make missing required Qt coverage
+   fail the release gate instead of treating a skipped suite as complete.
+2. Report the actual Qt platform, source SHA, environment and skips. The native
+   runner must reject accidental offscreen execution; offscreen output must say
+   offscreen. A printed checklist is not a passed manual check.
+3. Document one reproducible development environment and dependency-update policy.
+   Confirm the declared minimum Python/Qt versions or revise them based on tests.
+4. Retain concise logs for failures and accepted runs. Keep tests isolated from
+   personal SQLite/QSettings and use targeted no-network/no-process guards for
+   simulated operations as those consumers are introduced.
+
+**Accept when:** a clean checkout can reproduce all automated gates, missing Qt
+fails appropriately, and platform labels cannot imply unperformed native checks.
+**Maps to:** 53–55 and TESTING.
+
+<a id="oc-22"></a>
+
+### OC-22 — Repair packaging and provide a desktop launch path
+
+**Evidence:** the built wheel contains `app.py` and `main.py` but no `core`, `ui`
+or `effects`; importing it away from the checkout fails with missing `core`.
+
+**Work**
+
+1. Configure package discovery to include required packages and future runtime
+   assets, excluding tests/reference media unless deliberately shipped.
+2. Add an executable entry point and verify install/import/start from a fresh
+   environment whose working directory is outside the source tree.
+3. Provide a Fedora desktop entry/icon/install-uninstall procedure with a stable
+   application ID and working directory-independent paths. Avoid requiring a
+   terminal or a hardcoded developer checkout path.
+4. State the supported Python/Qt/platform range and retain normal XDG data paths.
+   An uninstall must not silently remove user content.
+5. Add the installed-package smoke to OC-21's CI pipeline. Build and launch from
+   outside the checkout so source imports cannot hide omitted runtime packages.
+
+**Accept when:** wheel/sdist contents are checked, an isolated installed build
+starts, and native Fedora launcher/startup/error behavior is recorded.
+**Maps to:** 01, scoped 55.
+
+<a id="oc-23"></a>
+
+### OC-23 — Complete native acceptance and close out the selected scope
+
+**Work**
+
+1. Run the shared acceptance gate below against the final corrected
+   revision: KDE Wayland and GNOME Wayland, 100/150/200% scaling, supported sizes,
+   keyboard/pointer/clipboard and native dialogs. Explicitly revise support if a
+   platform is excluded; do not mark an unrun cell passed.
+2. Include startup corrupt/unavailable-store recovery, all import/export/reset
+   outcomes, theme/file dialogs, focus return, display changes, long drafts,
+   private transitions, Peek and shutdown.
+3. Retain a manifest, automated logs, actual native checklist outcomes,
+   performance output and matched-reference captures under `docs/acceptance/`.
+4. Update PLAN checkboxes, STATUS, ROADMAP and CHANGELOG only from evidence.
+   Record remaining partial steps and deferred feature IDs. Tagging/releasing is
+   a separate action after the intended acceptance and user direction.
+
+**Accept when:** the current implementation has no unresolved P0/P1 defect in the
+selected scope, automated gates pass with no skips, native results identify the
+tested source, and unsupported/deferred behavior is explicit. This is foundation
+and existing-chat acceptance, not completion of all 55 product steps.
+
+## Sessions and local conversation
+
+These packages incorporate the former SC plan. Baseline and general privacy,
+empty-view, literal-text and native fixes have one owner in OC; the SC packages
+extend those contracts into actual session workflows. SC-0 is absorbed by OC-00;
+SC-7 is absorbed by the shared gate. No generated response or provider is required.
+
+| Package | Depends on | Deliverable |
+|---|---|---|
+| SC-1 | Corrected OC baseline, especially OC-03–05/09–10 | Session repository/service CRUD and migration |
+| SC-2 | SC-1, CU-1, OC-13–15 | Session browser and commands |
+| SC-3 | SC-2, OC-10/19 | Privacy integration across browser/search-ready contracts |
+| SC-4 | SC-1–3, OC-12/18–19 | Typed rich/code/tool fixture renderers and deterministic streaming |
+| SC-5 | SC-2–4, OC-05/07/14 | Persistent local history search |
+| SC-6 | SC-3–5, OC-12/16/18 | Sensitive spans and supplied process/status presentation |
+
+<a id="sc-1"></a>
+
+### SC-1 — Session repository and service lifecycle
+
+**Work:**
+
+1. Extend the existing `SessionRepository`/`SessionService` with create/get/list,
+   rename, favourite/unfavourite, archive/restore and delete; widgets never issue
+   SQL. Use explicit not-found/validation/store errors and transactional mutation.
+2. Add a dedicated favourite query field with an atomic migration if needed;
+   preserve IDs/timestamps/messages and extend import/export plus prior-schema
+   migration fixtures. Do not hide core sort fields in opaque metadata.
+3. Validate blank/overlong titles and documented whitespace normalization. Define
+   deterministic ordering by favourite/update time/stable ID, archived filtering,
+   and monotonic message ordering. Archive is reversible; delete needs confirmation
+   or an explicitly bounded undo policy. Deleting a session removes its messages.
+4. Keep Nobody operations memory-only. Archive/favourite must reject private
+   records rather than imply persistence. Use one lifecycle contract and return
+   copies/immutable records to consumers where appropriate.
+
+**Accept when:** CRUD, ordering, migration, exact import/export, restart,
+not-found and injected-write rollback tests pass; no private operation writes
+SQLite or export. **Feature IDs:** 10, 54.
+
+<a id="sc-2"></a>
+
+### SC-2 — Session browser and Home integration
+
+**Work:**
+
+1. Use CU-1's shared anchored popover for the chat-title browser. Show title,
+   updated time, favourite/storage state and a separate archive view/filter.
+2. Provide selection, rename, favourite, archive/restore and confirmed delete by
+   keyboard and pointer. Escape/outside click restores trigger focus. Enable
+   Favourite/Delete commands only when valid and display current bindings.
+3. Use the shared draft/lifecycle contract: save before switching, restore only
+   the selected draft, and retain the outgoing view on failed loading. Reuse
+   OC-09's empty renderer and OC-10's New Chat behavior.
+4. Keep Home/composer centered as the sidebar changes. Preserve a layout assertion
+   for the later Notes dock; do not implement a fake dock to close step 03.
+
+**Accept when:** normal, empty, populated, archived, deleted and failed-load
+sessions navigate without mixing/losing drafts; commands reflect current state.
+Step 03's Notes-dock criterion remains open. **Feature IDs:** 03, 10, 50.
+
+<a id="sc-3"></a>
+
+### SC-3 — Privacy integration for session workflows
+
+**Work:**
+
+1. Integrate OC-10's persistent indicator, explicit transition choice and Close
+   Nobody operation into the browser. Reuse its implementation; this package
+   verifies newly introduced consumers rather than recreating the mode controller.
+2. Ensure persistent browser/history/export providers cannot enumerate private
+   collections. Errors, diagnostics and derived snippets must not include private
+   content. Restart must restore none of its title/text/draft/status.
+3. Exercise pending/live private sessions, switch-and-retain/new/cancel, explicit
+   close, New Chat, failed load and durable-data replacement. Define consumer
+   tests for later CU attachments and Brain extraction to re-run.
+
+**Accept when:** browser and service integration enforce the lifecycle table by
+pointer/keyboard, private data remains excluded, and later-consumer gates are
+recorded rather than presumed passed. **Feature IDs:** 06, 10, 54.
+
+<a id="sc-4"></a>
+
+### SC-4 — Safe renderers and deterministic streaming
+
+**Work:**
+
+1. Define validated presentation metadata for role, timestamp, fixture kind,
+   language/code, status and later sensitive spans. Render user, assistant
+   fixture, system/tool, code and status records through reusable components.
+   Keep OC-12's literal user text; sanitize/escape supported rich content, forbid
+   embedded resource execution/loading, and label demo provenance clearly.
+2. Provide selection/copy/timestamps and accessible roles/names. Treat stored
+   message identity/order independently of widget state and provider execution.
+3. Add deterministic pending/running/completed/failed/cancelled streaming.
+   Separate partial presentation from durable results; only accepted terminal
+   fixture output may be persisted. Failure/cancel never creates a completed
+   assistant record. Retry uses a new operation ID; stale/duplicate completion
+   cannot alter another session or duplicate output.
+4. Reuse per-session scroll-follow and expansion state: follow only while the
+   user is at the end, never pull them away from earlier messages. Exercise a
+   200-message mixed fixture with bounded widget/cache ownership and safe reopen.
+
+**Accept when:** all fixture roles and stream outcomes work without network/model
+execution, exact ordering survives restart, and selection/copy/scroll meet the
+shared interaction targets. **Feature IDs:** 10, 53.
+
+<a id="sc-5"></a>
+
+### SC-5 — Persistent local history search
+
+**Work:**
+
+1. Add a local search-provider contract over persistent session titles/message
+   text through repositories/services. Private collections are structurally
+   unavailable. Exclude archived records by default with an explicit filter.
+2. Return stable result/source/session/message IDs, safe snippets, timestamps and
+   match location. Opening a result selects the right session and highlights or
+   scrolls to the match without changing its content/draft.
+3. Debounce queries with generation IDs. Cover empty query, searching, results,
+   no matches, failure/retry and stale completions after query/session changes.
+4. Ctrl+F opens/focuses search; arrows/Enter activate, Escape restores focus.
+   Measure 1,000 searchable records against the shared warm-search target; use
+   the existing bounded-work pattern if I/O would block the GUI.
+5. Define the typed Library-provider extension; connect real Library metadata/
+   content when 27/28 exist. Do not insert fake Library results.
+
+**Accept when:** local history search and private exclusion pass service/UI/native
+checks; canonical 11 remains Partial until Library integration. **Feature IDs:** 11, 50.
+
+<a id="sc-6"></a>
+
+### SC-6 — Sensitive spans and supplied process/status views
+
+**Work:**
+
+1. Validate explicit non-overlapping, in-bounds sensitive spans with semantic
+   labels; reject malformed ranges safely. Use synthetic fixture values only.
+2. Conceal marked values by default with intentional accessible reveal/conceal.
+   Copy/export defaults to concealed text; original-copy, if supplied, requires
+   an explicit clearly explained action. No concealed original reaches tooltips,
+   accessibility labels, selection previews or logs. Unmarked text is unchanged;
+   the GUI does not claim general secret detection.
+3. Define the relationship between presentation export and local-data backup
+   explicitly. Backup/import must not bypass the structured-credential policy;
+   do not silently corrupt message identity or indices when redacting content.
+4. Separate truthful session-storage status from expandable supplied process
+   entries. Support pending/running/completed/failed/cancelled with timestamps,
+   accessible announcements and adapter/fixture-supplied summaries only. Do not
+   invent or label content as hidden model reasoning.
+5. Preserve scroll on expand/collapse. Hiding summaries changes presentation,
+   not data. Keep private statuses/spans in memory and dispose with their session.
+6. Enable the corresponding Appearance controls only after their renderer and
+   copy/visibility policy pass; update existing messages live and on restart.
+
+**Accept when:** conceal/reveal/copy/accessibility tests and native checks pass,
+status fixtures are truthful, and privacy holds across the new consumers.
+**Feature IDs:** 48, 49 and the corresponding portion of 47.
+
+## Local composer utilities
+
+These packages absorb the former CU plan. Build CU-0/CU-1 before SC-2 to avoid
+separate session and composer popovers. CU-7's closeout is the shared gate.
+
+| Package | Depends on | Deliverable |
+|---|---|---|
+| CU-0 | Corrected OC baseline; session ownership contract | Selection/action limits and no-I/O contracts |
+| CU-1 | CU-0, OC-13–15 | Shared anchored popup/focus primitive |
+| CU-2 | SC-1–3, CU-0, OC-10/19 | Session-owned transient attachment/workspace aggregate |
+| CU-3 | CU-1/2, OC-11/15 | Native file/folder selection and accessible chips |
+| CU-4 | CU-3 | Typed Documents/Prompt entry contracts; honest unavailable gates |
+| CU-5 | CU-0/3, OC-14/16 | Registry-backed composer actions |
+| CU-6 | CU-5, SC-4, OC-18/19 | Deterministic Web/Shell simulations |
+
+<a id="cu-0"></a>
+
+### CU-0 — Selection and simulation contracts
+
+**Work:**
+
+1. Define documented maximum attachment count/per-file size, supported types,
+   unreadable/stale-file behavior and error policy before UI implementation.
+2. Specify an immutable draft-local descriptor: generated ID, display name,
+   canonical path, kind/MIME, size, source and availability. Absolute paths and
+   content stay transient; no SQLite/QSettings/export/log/search persistence.
+3. Workspace selection stores one transient directory descriptor. No recursion,
+   indexing, file-content reads, watching, symlink traversal or execution occurs.
+4. Define distinct action IDs, order, preference mapping and simulated wording.
+   Add targeted test seams that reject network and subprocess calls.
+5. Until step 04 can accept attachment descriptors in a submission, attachment-
+   bearing Send must explain unavailability and retain the aggregate. It must
+   neither silently clear selections nor claim their contents were consumed.
+
+**Accept when:** limits and contracts are concrete and shared, without opening
+model request/tokenization/provider work. **Feature IDs:** 07, 08, partial 04.
+
+<a id="cu-1"></a>
+
+### CU-1 — Shared anchored popover
+
+**Work:**
+
+1. Accept an anchor and injected content; contain no business state. Choose
+   above/below placement and clamp to workspace bounds as anchor/host/scale moves.
+2. Define keyboard/pointer opening, first enabled focus, Tab/Shift+Tab, list arrows,
+   Enter/Space, Escape/outside click and trigger-focus return.
+3. Keep one active composer popup; replacement/toggling/anchor destruction,
+   application deactivation and tool minimize must remove event filters and never
+   leave an invisible input blocker. Reuse the primitive for SC-2.
+4. Expose accessible name/role/item state and disabled reasons. Test edges/corners,
+   resize, focus return, destroyed anchors and repeated lifecycle cycles.
+
+**Accept when:** deterministic geometry/lifecycle checks and native pointer/focus
+checks pass; no orphan widget/filter/signal remains. **Feature IDs:** 07, 10.
+
+<a id="cu-2"></a>
+
+### CU-2 — Session-owned selection drafts
+
+**Work:**
+
+1. Extend the existing text/mode aggregate with ordered attachments and optional
+   workspace. A presentation-neutral controller owns add/remove/clear/replace/
+   mark-unavailable operations; reorder only if exposed.
+2. Preserve draft-local identity when filenames duplicate. Detect duplicate
+   canonical paths within a draft with a visible explanation.
+3. Apply the lifecycle table to concrete/pending normal and private states. A
+   later edit cannot be cleared by stale acceptance; failed storage preserves
+   text, mode, chips and workspace together.
+4. Private close/New Chat/shutdown disposes all references. Durable-data reset/
+   import preserves its excluded private aggregate. No selection path/name leaks
+   through exports, history, diagnostics or future persistent search.
+
+**Accept when:** switching/failure/stale completion/disposal tests cover all four
+pending/live privacy states with no new durable schema for selections.
+**Feature IDs:** 06, 07, partial 04.
+
+<a id="cu-3"></a>
+
+### CU-3 — Tool menu, files and workspace selection
+
+**Work:**
+
+1. Add an accessible tool-menu trigger and typed Attach Files, Documents,
+   Workspace and Prompt items with truthful enabled/disabled states.
+2. Use native multi-file selection; cancellation is a strict no-op. Validate
+   readable regular files under CU-0 limits with per-file accepted/rejected
+   feedback. Inspect only minimum metadata/type; do not parse contents.
+3. Render removable chips with name/type/size/availability and keyboard removal.
+   Handle long Unicode names without exposing unnecessary paths; bounded wrapping/
+   scrolling must preserve editor, mode and Send at minimum size/Large/Roomy.
+4. Workspace uses a directory picker with change/remove and a selected-only,
+   not-scanned/executed explanation. Missing/stale paths offer remove/reselect,
+   without automatic reads or retry loops.
+5. Opening tools, closing the popup or changing routes preserves the aggregate.
+
+**Accept when:** happy/cancel/invalid/oversize/unsupported/unreadable/stale cases
+work by pointer and keyboard and selections are never sent/persisted/executed.
+**Feature IDs:** 07.
+
+<a id="cu-4"></a>
+
+### CU-4 — Documents and Prompt integration contracts
+
+**Work:**
+
+1. Define a document-picker provider returning stable document IDs/display
+   metadata from the shared document service. Do not create a second store.
+2. Provide stable Documents and Prompt route/command contracts. Until actual
+   modules exist, show precise unavailable reasons; no fake editor/picker counts.
+3. Add contract checks so 27/28 and later 09 can enable these entries without
+   replacing the popup or draft APIs. Revalidate real module opening at that time.
+
+**Accept when:** integration contracts and honest current states work. Step 07
+remains Partial for real Documents/Prompt consumers. **Feature IDs:** 07, 09, 27, 28.
+
+<a id="cu-5"></a>
+
+### CU-5 — Composer action registry
+
+**Work:**
+
+1. Define pure immutable action specs: stable ID, label, icon, order, preference,
+   availability/reason and handler key. Reject duplicates/order collisions and
+   missing handlers; render buttons/menu items from the registry.
+2. Use `composer.web_search_demo` and `composer.shell_demo` distinct from
+   `navigation.search` or general Tools. Use canonical handlers where global
+   commands are exposed and composer scope for local controls.
+3. Recompute visibility live without deleting fixture state; restore documented
+   preferences on restart. Unknown actions fail closed with an explanation.
+
+**Accept when:** adding an action needs no layout edit, identity/handler tests
+pass, and visibility never implies a real unavailable operation. **Feature IDs:** 08, 47, 50.
+
+<a id="cu-6"></a>
+
+### CU-6 — Deterministic Web and Shell simulations
+
+**Work:**
+
+1. Use dedicated local adapters for loading/success/empty/failure/cancellation.
+   Retry uses a new operation ID; stale or duplicate completions are ignored.
+2. Web output is fixed fixture results/citations labelled “Simulated — no web
+   request was made.” Do not fetch arbitrary URLs. Shell output is fixed fixture
+   command/output labelled “Simulated — no command was executed.” Never pass
+   user text to a subprocess or terminal.
+3. Render in an explicit demo/status surface, not an apparent live assistant
+   answer. Cancel/error retains the full draft and important errors remain
+   accessible through shared feedback.
+4. Guard network/process boundaries in tests. After consumers pass, enable only
+   their corresponding Appearance controls with simulated wording; verify
+   live/restart/reset behavior and private output disposal.
+
+**Accept when:** every scenario and no-I/O assertion has evidence; no action
+implies real execution. Accept the local 08/47 subset and retain broader gates
+listed above. **Feature IDs:** 08, 47, 53.
+
+## Shared acceptance gate
+
+One gate replaces FD-6/7, SC-7 and CU-7. Apply it first under OC-23 for the current
+foundation and then to the changed feature subset after Sessions, Composer and
+later areas. Reuse valid evidence for unchanged contracts; rerun affected native
+cells after fixes. Do not repeat all foundation work merely because a new area
+starts. One failed cell keeps its criterion open.
+
+### Automated and integration checks
+
+1. Use isolated data/settings and one identified source revision. Run relevant
+   focused regressions, the complete Qt-enabled suite without skips, offscreen
+   smoke and, once OC-22 exists, installed-package smoke. Record actual platform.
+2. Exercise applicable success, empty, invalid, loading, failure, cancellation,
+   retry and stale-result behavior. Preserve drafts on failure; reject duplicate
+   completion and dangerous data destinations. Restart/migration/import/export
+   must preserve supported IDs, order and relationships.
+3. After SC, cover fresh/empty/populated/archived/deleted/failed-load sessions,
+   normal/private transitions, browser commands, copy/reveal/status and search.
+   After CU, cover pending/live normal/private full aggregates, cancelled native
+   picks, mixed accepted/rejected files, stale paths and no-I/O simulations.
+4. Attachment-bearing Send remains unavailable until its request contract exists;
+   no silent clearing/consumption. Private selections/status never enter ordinary
+   data, exports, logs or search. Revalidate with each later privacy consumer.
+5. Review all materially changed code for AGENTS.md documentation and architectural
+   ownership. Resolve defects without weakening assertions or thresholds.
+
+### Required fixture inventory
+
+| Area | Fixtures |
+|---|---|
+| Foundation/data | Fresh/saved preferences; fresh/populated/corrupt/unavailable stores; valid/invalid/nested-malformed/future/incomplete exports; protected destinations; duplicate/constraint and encoding failures |
+| Windows/themes | Two overlapping tools with distinct normal/minimized geometry; all 16 presets and ten effects; paused/Solid; long saved-theme lists; valid/duplicate/malformed/unwritable theme bundles |
+| Sessions | Pending/live normal/private; zero-message and 200 mixed messages; archived/deleted/failed-load; explicit sensitive spans and all stream/status outcomes; 1,000 searchable records |
+| Composer | Empty/text/file/mixed draft; duplicate filenames and canonical paths; Unicode/long/unsupported/oversized/unreadable/missing/directory-as-file; selected folder with nested/symlink/executable-looking entries to prove no scan/execution |
+| Lifecycle | Repeated tool/theme/session transitions; reset/import while private or drafting; close during animation/demo/data work; saved restart; stale callbacks |
+
+### Native desktop matrix
+
+| Dimension | Required evidence for the selected scope |
+|---|---|
+| Desktop | Fedora 44 KDE Wayland and GNOME Wayland; explicitly scope out unsupported environments instead of claiming an unrun pass |
+| Scaling | 100%, 150%, 200%; record actual available logical screen bounds |
+| Window/layout | 1100×680, default working size and maximized; Small/Default/Large × Compact/Comfortable/Roomy for affected surfaces |
+| Theme | Light, Copper, Ocean, Forest and any preset affected by a defect |
+| Input/accessibility | Pointer, keyboard-only traversal, accessible names/status, focus visibility/return, ordinary editing, selection/copy, applicable drag/drop |
+| Native dialogs | File/directory/color dialogs, confirmation/cancel, error detail and startup recovery |
+| Lifecycle | Minimize/hide/reactivate, display-size change, tool reopen, private close, application shutdown/restart |
+
+Run `scripts/fedora_phase_a_check.sh` from the supported native session. Verify
+the actual Qt platform; inherited offscreen must not count as native. Execute the
+checklist and record results; merely printing it is not evidence. Inspect original
+reference captures at matched theme/sidebar/window/tool state, using Copper/Ocean
+detail and Forest home/background. Document intentional native differences.
+Missing originals remain a named parity blocker.
+
+### Performance and bounded resource targets
+
+These original PLAN targets are retained:
+
+- After warm-up, local search over 1,000 supported records returns within 300 ms;
+  ordinary selection/tab changes respond within 100 ms. Expensive I/O/processing
+  shows prompt progress and does not block the GUI event loop for more than 100 ms.
+- Conversation fixture: 200 mixed prose/code messages. Later Gallery fixture:
+  500 photos with cached thumbnails. Later editor fixture: 2048×2048, five layers.
+- Animation: 60-second trace at 1720×900, Balanced quality, approximately 60 FPS
+  with p95 frame interval ≤33 ms on a recorded reference machine. Retain Leaves
+  plus the slowest-effect trace. Profile failures or ship an explicit tested
+  fallback; do not silently lower the threshold.
+- Repeat open/close for ten tools and twenty session/theme switches. Widgets,
+  timers, jobs, decoded-image caches and history must have documented bounds;
+  reaching a bound must not corrupt the current document or draft.
+
+Record measurement method, warm-up, samples, p95 where applicable, hardware,
+driver, scale, Qt and source. Offscreen timer measurements are instrumentation
+checks, not compositor or native frame-rate acceptance.
+
+### Evidence and closeout
+
+Store curated evidence under `docs/acceptance/evidence/<date>-<area>/`: source/
+environment manifest, automated log including skips, actual native checklist,
+performance result and needed captures. Maintain short linked acceptance records.
+Keep supplied originals separate from generated evidence.
+
+Update this plan's checkboxes only for executed criteria, plus STATUS, ROADMAP,
+CHANGELOG and the acceptance ledger. Preserve partial gates for Notes layout,
+Library, Prompt, attachments, extraction and model/request consumers. No new
+manual acceptance is created by this documentation consolidation.
+
+A release requires every selected feature to meet this gate and its catalogue
+criteria, or an explicit revision listing deferred feature IDs and unsupported
+environments. All 55 remain the long-term scope; the current non-model milestone
+is not a completed full-product release. Tag/publish only the evidenced revision
+under the intended release authorization; never move an existing acceptance tag.
+
+## Feature steps and acceptance conditions
+
+The following catalogue is normative. Original feature IDs, dependencies,
+deliverables and acceptance checkbox text are preserved. See the execution order
+and completion-boundary tables for the selected non-model slices; see STATUS and
+the acceptance ledger for actual implementation/evidence. Stale per-feature
+review observations are available in the original revision, not repeated here.
 
 ### 01. Application shell
 
-Baseline: Accepted baseline; regression suite passes
-Current check: Shell owns services, route state, feedback, themes and commands. Existing step-01 acceptance records a prior 26/26 run; the current 65-test suite also passes. Keep that scoped acceptance; do not reinterpret it as full desktop release validation.
-Next implementation instruction: Preserve the shell and route contracts. Extend factories for real modules; do not rebuild the shell. Maintain draft preservation while opening tools.
 Depends on: 54
 Deliverable: MainWindow, service/state ownership, route registry and layered workspace; main.py remains an entry point.
 Done only when:
@@ -243,9 +1198,6 @@ Done only when:
 
 ### 02. Collapsible sidebar
 
-Baseline: Partial
-Current check: Sidebar uses painted line icons, active state, collapse animation and visibility preferences. Profile and Settings remain visible when collapsed; the old hidden-Settings defect is resolved in source and rendered capture.
-Next implementation instruction: Validate rapid toggles, keyboard focus, route badges and all typography/density combinations. Account currently opens an unavailable scaffold, not a complete profile flow.
 Depends on: 1, 47, 50
 Deliverable: Expanded and icon-only navigation driven by canonical commands and visibility preferences.
 Done only when:
@@ -256,9 +1208,6 @@ Done only when:
 
 ### 03. Home / empty session
 
-Baseline: Partial
-Current check: Empty hero, welcome preferences and first-message transition exist. Latest persistent session is restored at startup. New Chat deliberately clears pending text, closes transient Nobody state and starts a blank persistent slot. Normal/Nobody mode switches restore session-owned drafts.
-Next implementation instruction: Add existing-session navigation and cover zero-message restored sessions; reuse the session-scoped draft ownership already used by privacy-mode transitions.
 Depends on: 10
 Deliverable: One session view whose empty state contains brand, welcome text, Nobody control and composer.
 Done only when:
@@ -269,9 +1218,6 @@ Done only when:
 
 ### 04. Chat composer
 
-Baseline: Partial
-Current check: Composer width adapts and Full-width works; height remains fixed at 96 with a 42-pixel editor limit. Submission only saves local user messages. Injected add_message failure now preserves the complete draft and selected mode; retry is covered to clear once and store one message.
-Next implementation instruction: Preserve future attachments through the same acceptance boundary. Then implement bounded autosizing, model/request records, cancellation and connect existing-session navigation to the session-owned draft map.
 Depends on: 5, 7, 8, 10, 50
 Deliverable: Reusable multiline composer with bounded autosizing, model selection, Agent/Chat mode and send state.
 Done only when:
@@ -284,9 +1230,6 @@ Done only when:
 
 ### 05. Model selector
 
-Baseline: Scaffold
-Current check: Select model opens FeaturePlaceholder; repository support exists but there is no user-facing registry/selector flow.
-Next implementation instruction: Build model configuration under 40/41, then a shared anchored selector backed by those records.
 Depends on: 40, 41, 53
 Deliverable: Anchored model popover consuming the shared model registry.
 Done only when:
@@ -297,9 +1240,6 @@ Done only when:
 
 ### 06. Nobody / incognito session
 
-Baseline: Partial
-Current check: SessionService keeps incognito records in memory and excludes them from SQLite/export. Normal/Nobody transitions render only the selected session, restore its draft, and report persistent versus memory-only storage truthfully. New Chat explicitly disposes the transient record and messages.
-Next implementation instruction: Add the eventual session browser/close affordances to the same disposal and draft contracts. Validate the transition visually on a native desktop; keep private content excluded from future search/extraction features.
 Depends on: 10, 54
 Deliverable: Session-level no-history/no-memory mode, visibly distinguished from normal sessions.
 Done only when:
@@ -311,9 +1251,6 @@ Done only when:
 
 ### 07. Composer tool menu and attachments
 
-Baseline: Not started
-Current check: No attachment menu, file chips, Documents/Workspace picker or Prompt entry exists.
-Next implementation instruction: Create one popover/focus primitive and use the document service rather than a parallel store.
 Depends on: 1, 28, 53
 Deliverable: Shared anchored popover primitive, Attach Files, Documents, Workspace and Prompt entry points.
 Done only when:
@@ -324,9 +1261,6 @@ Done only when:
 
 ### 08. Optional composer actions
 
-Baseline: Partial
-Current check: Appearance toggles directly show/hide Web Search and Shell buttons; clicks route to Search/Tools scaffolds. Canonical app commands exist, but there is no composer action registry.
-Next implementation instruction: Introduce the composer registry and connect labelled mock actions. Distinguish web search from conversation search; the current web-labelled button routes to conversation Search.
 Depends on: 7, 47, 50
 Deliverable: Command-backed action registry for web search, shell and additional composer tools.
 Done only when:
@@ -337,9 +1271,6 @@ Done only when:
 
 ### 09. Prompt Studio
 
-Baseline: Not started
-Current check: Prompt Studio has no dedicated view or route in the current registry.
-Next implementation instruction: Implement Inject/Persona/Group against persistent configuration once model and popover contracts exist.
 Depends on: 5, 7, 54
 Deliverable: Inject, Persona and Group tabs backed by persistent prompt configuration.
 Done only when:
@@ -350,9 +1281,6 @@ Done only when:
 
 ### 10. Sessions and message rendering
 
-Baseline: Partial
-Current check: Persistent session/message repositories and SessionService now drive local user cards and latest-session restoration. Normal/Nobody views and drafts are isolated, and transient sessions have an explicit disposal path. No session browser, rename/favourite/delete flow, streaming or rich message types exist.
-Next implementation instruction: Add session selection/CRUD and richer renderers using the established render/draft ownership boundary. Wire disabled favourite/delete commands only when the underlying flows work.
 Depends on: 1, 53, 54
 Deliverable: Local session/message model and reusable user, assistant, system/tool, code and status views.
 Done only when:
@@ -364,9 +1292,6 @@ Done only when:
 
 ### 11. Search
 
-Baseline: Scaffold
-Current check: Search opens a generic unavailable tool with shared demo-state controls; no local query provider is wired.
-Next implementation instruction: Implement history/Library search over shared records and keep incognito records out of its source.
 Depends on: 10, 27, 50
 Deliverable: Search overlay using a replaceable local search provider.
 Done only when:
@@ -377,9 +1302,6 @@ Done only when:
 
 ### 12. Email
 
-Baseline: Scaffold
-Current check: Email still uses FeaturePlaceholder; state-demo buttons are not mailbox behavior.
-Next implementation instruction: Implement local fixtures, list/detail and draft/compose flows after shared integration contracts.
 Depends on: 44, 53, 54
 Deliverable: Mailbox list/detail, account/filter controls, tags, compose and local draft state.
 Done only when:
@@ -390,9 +1312,6 @@ Done only when:
 
 ### 13. Brain — Memories
 
-Baseline: Scaffold with data foundation
-Current check: Brain route is a placeholder; generic Brain records have repository/service support.
-Next implementation instruction: Build memory cards and domain operations over the existing store; do not count table existence as UI completion.
 Depends on: 53, 54
 Deliverable: Memory cards and local CRUD with search, sorting, selection and enabled state.
 Done only when:
@@ -403,9 +1322,6 @@ Done only when:
 
 ### 14. Brain — Skills
 
-Baseline: Scaffold with data foundation
-Current check: Brain has no Skills tab or audit flow; Brain records can represent domain content.
-Next implementation instruction: Add skill validation, approval/injection rules and deterministic audit UI on the shared Brain service.
 Depends on: 13
 Deliverable: Skill records with confidence, tags, instructions and enabled/audit state.
 Done only when:
@@ -416,9 +1332,6 @@ Done only when:
 
 ### 15. Brain — Add / import / export
 
-Baseline: Not started
-Current check: Whole-store JSON import/export exists, but no Brain-specific form or import/export GUI exists.
-Next implementation instruction: Build focused forms and preview/duplicate handling. Whole-store replacement is not a substitute for skill/memory import.
 Depends on: 13, 14
 Deliverable: Validated memory and skill forms plus versioned JSON interchange.
 Done only when:
@@ -429,9 +1342,6 @@ Done only when:
 
 ### 16. Brain automation preferences
 
-Baseline: Not started
-Current check: No Brain automation settings or extraction pipeline UI is present.
-Next implementation instruction: Implement after memory/skill records and incognito transitions are reliable.
 Depends on: 6, 14, 15
 Deliverable: Persistent extraction/approval thresholds and injection limits for the demo pipeline.
 Done only when:
@@ -442,9 +1352,6 @@ Done only when:
 
 ### 17. Calendar
 
-Baseline: Scaffold
-Current check: Calendar route is a placeholder; no calendar/event repository or import/view UI is exposed.
-Next implementation instruction: Add calendar domain model and supported .ics scope before views; retain mocked CalDAV boundary.
 Depends on: 44, 53, 54
 Deliverable: Local calendars, month/week/day views, event editing and local .ics import; CalDAV configuration only.
 Done only when:
@@ -456,9 +1363,6 @@ Done only when:
 
 ### 18. Model Compare
 
-Baseline: Scaffold
-Current check: Model Compare remains a generic tool scaffold.
-Next implementation instruction: Use shared model registry and deterministic runners; save results through Library contracts.
 Depends on: 5, 10, 54
 Deliverable: Comparison setup and results using deterministic mock model runners.
 Done only when:
@@ -469,9 +1373,6 @@ Done only when:
 
 ### 19. Cookbook
 
-Baseline: Scaffold
-Current check: Cookbook remains a generic tool scaffold.
-Next implementation instruction: Build cache/status/configuration UI with explicitly simulated launch/download/dependency operations.
 Depends on: 41, 53, 54
 Deliverable: Local-model management console with Launch, Download, Dependencies and Settings tabs.
 Done only when:
@@ -482,9 +1383,6 @@ Done only when:
 
 ### 20. Deep Research
 
-Baseline: Scaffold
-Current check: Deep Research remains a generic tool scaffold.
-Next implementation instruction: Use the task/job model and shared search/model defaults; persist one artifact per completed job.
 Depends on: 31, 42, 43
 Deliverable: Research setup and local queued jobs producing demo reports.
 Done only when:
@@ -496,9 +1394,6 @@ Done only when:
 
 ### 21. Gallery — Photos
 
-Baseline: Scaffold with data foundation
-Current check: Gallery metadata repository/service exists; Gallery still opens a placeholder.
-Next implementation instruction: Implement safe local import and cached thumbnails before albums/editor work.
 Depends on: 53, 54
 Deliverable: Local image import, thumbnail model/view, tags, filters, favourites and selection.
 Done only when:
@@ -510,9 +1405,6 @@ Done only when:
 
 ### 22. Gallery — Albums
 
-Baseline: Not started
-Current check: No album view or membership model is implemented.
-Next implementation instruction: Add album/photo relationships after the Photos model is usable.
 Depends on: 21
 Deliverable: Album records referencing imported photos.
 Done only when:
@@ -523,9 +1415,6 @@ Done only when:
 
 ### 23. Gallery editor foundation
 
-Baseline: Not started
-Current check: No editor document, viewport or save/export UI exists.
-Next implementation instruction: Establish document ownership and coordinate mapping before tools.
 Depends on: 21
 Deliverable: Dedicated canvas/viewport and editor document architecture; QGraphicsView/Scene or an equivalent custom canvas.
 Done only when:
@@ -536,9 +1425,6 @@ Done only when:
 
 ### 24. Gallery editing tools
 
-Baseline: Not started
-Current check: No editing tool implementation exists.
-Next implementation instruction: Implement ordinary edits through the layer/history model, then labelled mock AI flows.
 Depends on: 23, 25
 Deliverable: Move, Crop, Transform, Brush, Eraser, Clone, Lasso, Wand and Sharpen; adapter UI for AI-labelled tools.
 Done only when:
@@ -550,9 +1436,6 @@ Done only when:
 
 ### 25. Gallery layers and history
 
-Baseline: Not started
-Current check: No layer/mask/history subsystem exists.
-Next implementation instruction: Define serializable layers and reversible commands before adding tools.
 Depends on: 23
 Deliverable: Independent layer model with pixel content, visibility, opacity, order, transforms and masks; command-based history.
 Done only when:
@@ -564,9 +1447,6 @@ Done only when:
 
 ### 26. Inpaint workflow
 
-Baseline: Not started
-Current check: No mask/inpaint workflow exists.
-Next implementation instruction: Build on the editor command model; reject stale processing results.
 Depends on: 24, 25, 42
 Deliverable: Mask editor and preview/apply workflow with replaceable processing adapter.
 Done only when:
@@ -578,9 +1458,6 @@ Done only when:
 
 ### 27. Library
 
-Baseline: Scaffold
-Current check: Library remains a placeholder; sessions and generic documents now have data services.
-Next implementation instruction: Build one Library aggregation model over existing services; keep source records authoritative.
 Depends on: 10, 28, 54
 Deliverable: Shared searchable item model for Chats, Documents, Research and Archive.
 Done only when:
@@ -591,9 +1468,6 @@ Done only when:
 
 ### 28. Documents
 
-Baseline: Data foundation only
-Current check: Document records/service exist; no document editor, import flow or viewer is exposed.
-Next implementation instruction: Implement local text/Markdown workflows and unsaved-edit protection; add a real route/entry point.
 Depends on: 53, 54
 Deliverable: Local plain-text/Markdown document import, editor and viewer.
 Done only when:
@@ -604,9 +1478,6 @@ Done only when:
 
 ### 29. Research Library
 
-Baseline: Not started
-Current check: No research report production or Research Library view exists.
-Next implementation instruction: Connect completed jobs only after Research and Library services/views exist.
 Depends on: 20, 27
 Deliverable: Research category backed by completed research job artifacts.
 Done only when:
@@ -617,9 +1488,6 @@ Done only when:
 
 ### 30. Notes dock
 
-Baseline: Scaffold with data foundation
-Current check: Notes records exist, but the route opens a floating placeholder rather than the planned right-side dock.
-Next implementation instruction: Implement a dock and note CRUD; consume scheduler links after Tasks is ready.
 Depends on: 31, 54
 Deliverable: Right-side dock with notes, list/grid modes, archive, pin, selection and reminder links.
 Done only when:
@@ -630,9 +1498,6 @@ Done only when:
 
 ### 31. Tasks and local scheduler
 
-Baseline: Scaffold with data foundation
-Current check: Task records exist; no scheduler, activity model or dedicated task tabs are exposed.
-Next implementation instruction: Define deterministic transitions, recurrence/overdue policy and scheduler ownership before the tabs.
 Depends on: 46, 53, 54
 Deliverable: Task state model plus Tasks, Activity, Completed and Add views; safe in-process demo execution.
 Done only when:
@@ -644,9 +1509,6 @@ Done only when:
 
 ### 32. Theme presets
 
-Baseline: Implemented; native acceptance pending
-Current check: All 16 built-ins are live and exercised by the smoke check. The previously light Customize scroll background is corrected in the observed Forest render.
-Next implementation instruction: Preserve semantic theme implementation; complete matched-state Light/Copper/Ocean/Forest visual review, focus/disabled/readability and native restart evidence.
 Depends on: 1
 Deliverable: Sixteen semantic theme definitions consumed consistently by all widgets.
 Done only when:
@@ -657,9 +1519,6 @@ Done only when:
 
 ### 33. Theme customization
 
-Baseline: Implemented; native acceptance pending
-Current check: Primary and More Colors controls, persistent overrides, reset and picker-cancel handling are implemented and covered by theme tests.
-Next implementation instruction: Run actual picker cancel/live update and restart flows with multiple windows; retain current override semantics.
 Depends on: 32, 54
 Deliverable: Editable semantic palette with live preview and persistent custom overrides.
 Done only when:
@@ -670,9 +1529,6 @@ Done only when:
 
 ### 34. Colour harmony generator
 
-Baseline: Implemented; native acceptance pending
-Current check: Deterministic four-mode light/dark harmony generation, preview, Apply and Reset are implemented with passing logic/Qt tests.
-Next implementation instruction: Validate native interaction and generated-palette readability rather than rebuilding the generator.
 Depends on: 33
 Deliverable: Local deterministic palette generation, preview and explicit application.
 Done only when:
@@ -683,9 +1539,6 @@ Done only when:
 
 ### 35. Fonts, density and frosted surfaces
 
-Baseline: Partial; targeted clipping defect corrected
-Current check: Typography and density now affect styles, and Frosted has a documented translucent fallback. The Nobody control uses content-aware sizing and passes a 1100×680 Sans Serif/Large/Roomy rendered inspection and size-hint regression.
-Next implementation instruction: Inspect both Theme tabs and Settings with every text-size/density combination for other fixed-size assumptions. Preserve the explicitly non-compositor Frosted fallback.
 Depends on: 32, 47
 Deliverable: Central typography/spacing tokens and a defined frosted appearance with desktop fallback.
 Done only when:
@@ -696,9 +1549,6 @@ Done only when:
 
 ### 36. Animated backgrounds
 
-Baseline: Implemented; performance/native acceptance pending
-Current check: All ten effects switch in the smoke check; Solid timer disabling, independent pause/suspension, effect color and settings have passing tests.
-Next implementation instruction: Capture actual animation/performance on the active desktop. Offscreen application suspension means this run cannot substantiate animation smoothness.
 Depends on: 32, 54
 Deliverable: Independent effect lifecycle and shared speed, intensity, size, quality, color and pause settings.
 Done only when:
@@ -710,9 +1560,6 @@ Done only when:
 
 ### 37. Theme save / share
 
-Baseline: Implemented; native dialog acceptance pending
-Current check: Named themes, validated/versioned atomic JSON, duplicate checks and saved bundles exist. Logic/Qt tests pass, including restart state.
-Next implementation instruction: Exercise native save/import/export/cancel/error dialogs. Keep invalid import non-mutating; inspect long saved-theme lists for scroll/reachability.
 Depends on: 33, 34, 35, 36
 Deliverable: Named custom themes with versioned JSON import/export.
 Done only when:
@@ -723,9 +1570,6 @@ Done only when:
 
 ### 38. Peek mode
 
-Baseline: Implemented; native interaction pending
-Current check: Visual-only Peek state and opacity lifecycle have passing Qt tests and smoke coverage.
-Next implementation instruction: Check pointer interaction and background visibility through the real desktop compositor; do not claim click-through.
 Depends on: 39
 Deliverable: Temporary visual transparency for tool content while its titlebar stays usable.
 Done only when:
@@ -736,9 +1580,6 @@ Done only when:
 
 ### 39. Floating tool-window framework
 
-Baseline: Implemented; native interaction pending
-Current check: Normal/minimized geometry separation, reuse, minimized reopen restoration, bounds recovery and commit behavior exist; all four window tests and smoke assertions pass.
-Next implementation instruction: Complete real pointer drag/resize/raise and process-restart geometry checks. Do not repeat already-fixed minimized-height work.
 Depends on: 1, 54
 Deliverable: Shared window lifecycle, drag, resize, stacking, minimize/restore, close and geometry.
 Done only when:
@@ -750,9 +1591,6 @@ Done only when:
 
 ### 40. Settings — Add Models
 
-Baseline: Partial shared shell; model page absent
-Current check: Settings is now real, but only Appearance and Shortcuts tabs exist. ModelRepository/ModelService is available; Add Models form is absent.
-Next implementation instruction: Extend the existing Settings shell with local/API model forms and a registry service rather than replacing working tabs.
 Depends on: 1, 53, 54
 Deliverable: Settings navigation shell and model configuration forms using a shared registry.
 Done only when:
@@ -763,9 +1601,6 @@ Done only when:
 
 ### 41. Settings — Added Models
 
-Baseline: Data foundation only
-Current check: Models can be stored through services, but Added Models UI, edit/remove and probe states are absent.
-Next implementation instruction: Extend service operations and implement list/probe flows with reference invalidation.
 Depends on: 40
 Deliverable: Shared model list with edit/remove/probe and availability states.
 Done only when:
@@ -776,9 +1611,6 @@ Done only when:
 
 ### 42. Settings — AI Defaults
 
-Baseline: Not started
-Current check: No capability-default configuration UI or resolver is exposed.
-Next implementation instruction: Implement after model management and share it across consumers.
 Depends on: 41
 Deliverable: Central capability-based selection for chat, fallbacks, utility, vision, research, images and writing style.
 Done only when:
@@ -789,9 +1621,6 @@ Done only when:
 
 ### 43. Settings — Search
 
-Baseline: Not started
-Current check: No provider/search-limit configuration page exists.
-Next implementation instruction: Add schema-backed settings and mock provider testing.
 Depends on: 40, 54
 Deliverable: Provider settings plus research limits/timeouts through a replaceable adapter.
 Done only when:
@@ -802,9 +1631,6 @@ Done only when:
 
 ### 44. Settings — Integrations
 
-Baseline: Not started
-Current check: No integration wizard/configuration pages exist.
-Next implementation instruction: Use shared forms and credential boundaries; preserve mock-only execution scope.
 Depends on: 40
 Deliverable: Schema-driven configuration pages for API Service, CalDAV, Claude Agent, Codex Agent, CardDAV, IMAP/SMTP and MCP.
 Done only when:
@@ -815,9 +1641,6 @@ Done only when:
 
 ### 45. Settings — Email navigation
 
-Baseline: Not started
-Current check: No Settings Email hub exists.
-Next implementation instruction: Connect real module/subsection routes once Email and Tasks exist.
 Depends on: 12, 31, 44
 Deliverable: Navigation hub linking Email, mail accounts and related tasks.
 Done only when:
@@ -828,9 +1651,6 @@ Done only when:
 
 ### 46. Settings — Reminders
 
-Baseline: Not started
-Current check: No reminder-provider settings page exists.
-Next implementation instruction: Implement local configuration/preview and simulated delivery before native notification validation.
 Depends on: 44, 54
 Deliverable: Reminder-provider settings for desktop, email, ntfy and webhook with simulated delivery.
 Done only when:
@@ -841,9 +1661,6 @@ Done only when:
 
 ### 47. Settings — Appearance
 
-Baseline: Partial; unavailable capabilities labelled
-Current check: Working appearance controls persist and update existing UI, with passing reset/draft-preservation tests. Session storage status describes actual persistent/memory-only state. Sensitive blur, Web Search and Shell preferences remain stored for future consumers but their Settings/composer controls are disabled and visibly labelled unavailable; no inert blur property claims protection.
-Next implementation instruction: Enable dependent controls only when steps 08/48/49 supply observable behavior, then add their live/restart acceptance. Retain the accurate unavailable state until then.
 Depends on: 1, 32, 54
 Deliverable: Declarative live preferences for chat, composer, sidebar and presentation.
 Done only when:
@@ -854,9 +1671,6 @@ Done only when:
 
 ### 48. Sensitive-span presentation
 
-Baseline: Preference only
-Current check: The sensitiveBlurEnabled property exists; no sensitive-span renderer, conceal/reveal or copy/export policy is implemented.
-Next implementation instruction: Complete actual rendering and copy/accessibility behavior before claiming the setting works.
 Depends on: 10, 47
 Deliverable: Presentation layer for explicitly marked sensitive demo spans; detection remains an adapter concern.
 Done only when:
@@ -867,9 +1681,6 @@ Done only when:
 
 ### 49. Process/status presentation
 
-Baseline: UI only
-Current check: One static session-summary label is available, optionally shown; no expandable process/status containers exist. It remains persistence-labelled after an incognito transition.
-Next implementation instruction: Bind session status to actual state immediately; later add provider-supplied progress/status components.
 Depends on: 10, 47
 Deliverable: Expandable provider-supplied progress summaries and tool status, separate from answer content.
 Done only when:
@@ -880,9 +1691,6 @@ Done only when:
 
 ### 50. Keyboard commands and shortcut editor
 
-Baseline: Partial; registry/editor implemented
-Current check: Nine canonical commands, conflict checking, persistent rebinding/clear/reset and a working Shortcuts page exist; tests pass. Favourite/Delete remain intentionally disabled and most tools remain scaffolds.
-Next implementation instruction: Complete native focus/text-editing shortcut checks and activate feature commands as their workflows arrive; count the registry as implemented, not all actions complete.
 Depends on: 1, 54
 Deliverable: Canonical QAction/QShortcut command registry plus persistent user bindings.
 Done only when:
@@ -893,9 +1701,6 @@ Done only when:
 
 ### 51. Account flows
 
-Baseline: Scaffold
-Current check: Account is now a registered unavailable route reached by the avatar, not an account workflow.
-Next implementation instruction: Build demo account forms behind the current route and preserve honest simulated results.
 Depends on: 40, 53
 Deliverable: Profile, logout, password change and 2FA visual flows backed by an explicit demo account service.
 Done only when:
@@ -906,9 +1711,6 @@ Done only when:
 
 ### 52. Profile / Study Mode area
 
-Baseline: Partial entry point
-Current check: Avatar button routes to Account and remains visible collapsed; Admin text is static and Study Mode/status switching is absent.
-Next implementation instruction: Keep the entry point; add profile/mode state and defined effects after the Account service/view.
 Depends on: 51
 Deliverable: Interactive sidebar account/status/mode entry.
 Done only when:
@@ -919,9 +1721,6 @@ Done only when:
 
 ### 53. Shared states and feedback
 
-Baseline: Accepted baseline; regression suite passes
-Current check: Existing step-53 evidence records prior acceptance. Shared state components, stale-result protection, retry/cancel fixtures, feedback and retained issues pass the current suite.
-Next implementation instruction: Reuse these components in new modules. Source-constructor error-signal timing and startup recovery presentation still need explicit end-to-end evidence; acceptance of components is not blanket acceptance of every caller.
 Depends on: 1
 Deliverable: Reusable empty, loading, error, retry and toast components plus deterministic demo adapters.
 Done only when:
@@ -933,9 +1732,6 @@ Done only when:
 
 ### 54. Persistence and application data
 
-Baseline: Partial; substantial data layer implemented
-Current check: Schema v2 SQLite, stable IDs, repositories/services, migration fixture, incognito exclusion, atomic export and transactional import/reset exist; persistence tests pass. Data management has no user-facing import/export/reset surface yet.
-Next implementation instruction: Add the management/recovery GUI and malformed-input paths without duplicating repositories. Distinguish working incognito disk exclusion from incomplete session disposal and draft semantics.
 Depends on: None
 Deliverable: QSettings for preferences/geometry; versioned SQLite for local content and explicit JSON import/export formats.
 Done only when:
@@ -947,9 +1743,6 @@ Done only when:
 
 ### 55. Fedora desktop validation and release polish
 
-Baseline: Not accepted; offscreen evidence only
-Current check: Current run uses Fedora 44 KDE edition, Python 3.14.7, PySide6/Qt 6.11.2 and the offscreen platform. No new GNOME/KDE Wayland pointer, scaling, clipboard, notification or performance pass was performed.
-Next implementation instruction: Run the release desktop matrix after functional fixes. Existing historical native-run reports remain historical, not evidence that every current release condition passed.
 Depends on: All feature steps selected for the release
 Deliverable: Native desktop behavior, accessibility, rendering parity, performance and clean shutdown.
 Done only when:
@@ -960,49 +1753,30 @@ Done only when:
 - [ ] Closing during background/demo work stops timers/jobs safely and restores valid state on restart; no unintended process remains.
 - [ ] Compare matched-state captures against the supplied references; document intentional native differences and verify the performance fixture targets in the acceptance protocol.
 
-## ACCEPTANCE PROTOCOL AND TRACKING
+## Superseded-plan mapping
 
-For each step keep a short evidence record in docs/acceptance/ when it
-is implemented. Suggested fields: step ID, status, build/revision, date, tester,
-OS/session/Qt/display scale, fixture and storage location, actions, expected and
-actual result, evidence paths, remaining failures. Documentation alone is not
-acceptance evidence. Mark checkboxes only after executing the corresponding check.
-Keep STATUS.md aligned with actual evidence and next action; keep ROADMAP.md
-limited to execution order. Historical acceptance records retain their original
-environment and date. Do not mark a step Done merely by updating documentation.
+The source proposals are preserved in Git history. No copied archive is needed.
 
-Reference comparisons:
-- Match feature, selected theme, expanded/collapsed sidebar, window size and tool
-  state before comparing. Record the source screenshot filename or video time.
-- Check layout hierarchy, proportions, control order, spacing, typography, colors,
-  borders, empty states and interaction. Native window chrome/file dialogs may
-  differ intentionally; document those differences rather than claiming parity.
-- Use Copper and Ocean for the detailed reference flows and Forest for home/
-  background comparison; also verify Light and one other dark preset for contrast.
+| Previous source | Replacement owner |
+|---|---|
+| [Former root PLAN](https://github.com/BigBenKenobi/Otter-Cove/blob/6aa802219f4130ac4732039bda01b0a870934cfe/PLAN.md) | This plan's feature catalogue and shared gate; old R1–R6/A–G execution order retired |
+| [PR #8 inventory and detailed plans](https://github.com/BigBenKenobi/Otter-Cove/tree/531aaa38fe61fac867f8238744c5c6fce08aca18/docs/planning) | Eight-area sequence, session/draft contracts, SC/CU packages and cross-area gates here |
+| [Initial PR #9 improvement plan](https://github.com/BigBenKenobi/Otter-Cove/blob/3240dcb37e287cbb6d059c86b940bbd86da6b8d0/docs/planning/current-implementation-improvement-plan.md) | OC-00–23 here; dated review remains evidence |
+| FD-0 | OC-00 baseline; OC-01–04 findings now precede R2 landing |
+| FD-1 | Relevant OC regressions plus OC-21; no second generic test-building package |
+| FD-2 | OC-01–07 and native data checks in the shared gate |
+| FD-3 | OC-13–15 and native interaction gate |
+| FD-4 | OC-08/15/16 and theme matrix |
+| FD-5 | OC-06/17/19 and animation/Peek measurements |
+| FD-6/FD-7 | OC-23 and shared native/evidence gate |
+| SC-0/SC-7 | OC-00, shared session contracts and shared gate |
+| SC-1/SC-2 | Retained here; reuse OC-09 empty state and CU-1 popup |
+| SC-3 | Retained as browser/consumer integration of OC-10 privacy behavior |
+| SC-4/SC-5/SC-6 | Retained rich/streaming, search, sensitive/status increments, reusing OC fixes |
+| CU-0/CU-1 | Retained shared contracts/popup, scheduled before SC-2 |
+| CU-2–6 | Retained selection/action increments after session contracts |
+| CU-7 | Shared integration/native/evidence gate |
 
-Shared performance fixtures (targets, to be measured on a recorded machine):
-- 200 messages with mixed prose/code; 1,000 searchable content records; 500 photos
-  with cached thumbnails; editor project of 2048×2048 pixels and five layers.
-- After warm-up, local search at these sizes returns within 300 ms; ordinary
-  selection/tab changes respond within 100 ms. Expensive I/O/decoding/processing
-  shows progress promptly and does not block the GUI event loop for >100 ms.
-- Background animation uses the step 36 target. Record measurement method, p95
-  where applicable, and any bounded cache/history settings. Do not silently lower
-  thresholds; revise the documented target with a rationale if hardware demands it.
-- Repeatedly open/close ten tools and switch sessions/themes twenty times; verify
-  that retained widgets, timers and background jobs do not accumulate unboundedly.
-
-Release completion requires all 55 steps to satisfy this plan, or an explicitly
-revised release scope listing deferred IDs. External backend integration is a
-separate future plan with its own authentication, network, execution and service
-acceptance tests. It is never inferred from a successful GUI simulation.
-
-## Repository consolidation — 21 September 2026
-
-Document roles and architectural contracts now live in this repository. The latest
-repeat verification passed 65/65 tests and the smoke check offscreen; its logs and
-source manifest are in docs/acceptance/evidence/2026-09-21-offscreen/. See
-[the dated record](docs/acceptance/2026-09-21-offscreen.md). This corroborates prior
-automated results, not the unresolved manual checks or defect fixes.
-Git has no repository/HEAD here; no known-good commit/tag has been invented.
-Next implementation remains R1, starting with failed-send draft preservation.
+All 24 OC task IDs remain defined. Six unique SC and seven CU packages remain;
+the repeated foundation/baseline/closeout packages are mapped above instead of
+kept as parallel instructions. Old `docs/planning/*.md` URLs now point here.

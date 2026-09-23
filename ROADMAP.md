@@ -1,21 +1,24 @@
 # Roadmap
 
-Execution order only. [PLAN.md](PLAN.md) owns scope, dependencies and acceptance;
-[STATUS.md](STATUS.md) records current progress and evidence.
+Sequence summary only. [PLAN.md](PLAN.md#execution-order) is the replacement
+implementation/acceptance plan; [STATUS.md](STATUS.md) records progress/evidence.
+The former R1–R6/model-first phase sequence is superseded.
 
-**Next: R2 — finish foundation acceptance and local-data recovery UI.** R1's
-failed-send, session-mode, private-disposal, draft-ownership, scaled-control and
-unavailable-capability corrections have targeted tests; native checks remain.
+**Next: OC-00 baseline, then OC-01–04 data-protection fixes before R2 landing.**
 
-| Phase | Order / focus | Exit reference |
+| Order | Area / work | Completion boundary |
 |---|---|---|
-| A — Finish foundations | R1 corrections, then R2: storage/recovery UI, window/theme/settings acceptance and animation measurements | PLAN: A exit and steps 54, 01, 53, 39, 32–38, 47, 50 |
-| B — Settings and models | 40 → 41 → 42 → 43 → 44 → 46 → 02 → 51 → 52 | PLAN: B exit |
-| C — Chat and content | 10 → 03 → 06 → 28 → 07 → 08 → 05 → 04 → 09 → 27 → 11 → 48 → 49 | PLAN: C exit |
-| D — Personal workspaces | 13 → 14 → 15 → 16 → 31 → 30 → 12 → 45 → 17 | PLAN: D exit |
-| E — Research and Gallery | 18 → 19 → 20 → 29 → 21 → 22 | PLAN: E exit |
-| F — Image editor | 23 → 25 → 24 → 26 | PLAN: F exit |
-| G — Desktop release | 55 and regression of release-selected features | PLAN: G exit |
+| 1 | Existing foundation: OC-00–22 by dependency, then OC-23 | Data safety, current UI reliability, packaging and scoped native evidence |
+| 2 | Sessions: SC-1, shared CU-0/CU-1 before SC-2, then SC-2–6 | Local lifecycle/browser/renderers/search and sensitive/status presentation |
+| 3 | Composer: CU-2–6 | Transient file/folder selections, action registry and explicit simulations |
+| 4 | Documents/Library: 28 → 27, then 11/07 integration | Real local editing, Library search and document picker |
+| 5 | Brain: 13 → 14 → 15 → 16 | Local records and simulated audit/extraction |
+| 6 | Productivity: scoped non-AI 44, then 31 → 30 → 12 → 45 → 46 → 17 | Local tasks/notes/calendar, fixture email and simulated reminders |
+| 7 | Gallery/editor: 21 → 22 → 23 → 25 → 24 | Local images/albums and conventional editing/layers/history |
+| 8 | Demo identity/study: 51 → 52 | Truthful simulated account flows and local Study Mode |
 
-Dependencies in PLAN.md govern full completion. Independent work may start sooner;
-already implemented foundation controls need targeted completion and verification.
+Use the shared acceptance gate after each area and revalidate affected consumers.
+Areas 4–8 retain their full feature criteria; expand the selected area's detailed
+packages inside PLAN before implementation. Model work stays deferred. Partial
+steps and future Prompt/Library/Notes/attachment/extraction/model dependencies
+remain explicit in PLAN; this order does not waive their completion gates.
