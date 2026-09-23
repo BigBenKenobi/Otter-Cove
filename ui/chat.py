@@ -384,6 +384,23 @@ class ChatSurface(QWidget):
         self._session_id = self._mode_session_ids[False]
         self._render_active_session()
 
+    def has_replaceable_persistent_draft(self) -> bool:
+        """Report whether replacement would discard a concrete durable draft.
+
+        Pending normal-slot text is explicitly retained by the Pilot policy.
+        Only a draft keyed to an existing persistent session needs an additional
+        warning because the session owner is about to be replaced.
+        """
+
+        active_text = self.prompt.draft_text() if not self._session_incognito else ""
+        if self._session_id and active_text:
+            return True
+        return any(
+            key not in {self._pending_draft_key(False), self._pending_draft_key(True)}
+            and not self.sessions.is_incognito(key)
+            for key in self._drafts
+        )
+
     def apply_appearance(self, preferences: dict) -> None:
         self._appearance.update(preferences)
         self.prompt.set_full_width(bool(self._appearance.get("full_width", False)))

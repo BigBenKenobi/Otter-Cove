@@ -203,6 +203,58 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertTrue(self.data.sessions.is_incognito(private_id))
         self.assertEqual(chat.draft_text(), "private unsent draft")
 
+    def test_import_preserves_private_view_and_drops_replaced_durable_draft(self) -> None:
+        """Import refreshes durable caches without switching or reusing Nobody state."""
+
+        from PySide6.QtWidgets import QMessageBox
+
+        imported = self.data.sessions.create_session("Imported durable session")
+        self.data.sessions.add_message(imported.id, "user", "imported text")
+        source = Path(self.tmp.name) / "replacement.json"
+        source.write_text(json.dumps(self.data.local_data.snapshot()), encoding="utf-8")
+
+        chat = self.window.workspace.chat
+        chat.nobody.setChecked(True)
+        chat.set_draft_text("private message")
+        chat.prompt.submit()
+        self.app.processEvents()
+        chat.set_draft_text("private import draft")
+        private_id = chat.session_id
+        with (
+            patch("app.QFileDialog.getOpenFileName", return_value=(str(source), "JSON")),
+            patch("app.QMessageBox.question", return_value=QMessageBox.Yes),
+        ):
+            self.window._import_local_data()
+        self.app.processEvents()
+        self.assertTrue(chat.nobody.isChecked())
+        self.assertEqual(chat.session_id, private_id)
+        self.assertEqual(chat.draft_text(), "private import draft")
+        self.assertEqual(self.data.sessions.messages(private_id)[0].content, "private message")
+
+        # Switching to normal uses imported durable content; the private aggregate
+        # remains isolated and no private value entered SQLite/export data.
+        chat.nobody.setChecked(False)
+        self.app.processEvents()
+        self.assertEqual(chat.session_id, imported.id)
+        self.assertEqual(self.data.sessions.messages(imported.id)[0].content, "imported text")
+        self.assertNotIn("private import draft", json.dumps(self.data.local_data.snapshot()))
+
+    def test_replacement_draft_confirmation_and_cancel_preserve_state(self) -> None:
+        """Cancelled replacement prompts leave persistent drafts and records unchanged."""
+
+        from PySide6.QtWidgets import QMessageBox
+
+        session = self.data.sessions.create_session("Draft owner")
+        chat = self.window.workspace.chat
+        chat._session_id = session.id
+        chat._mode_session_ids[False] = session.id
+        chat._render_active_session()
+        chat.set_draft_text("normal session draft")
+        with patch("app.QMessageBox.warning", side_effect=[QMessageBox.Yes, QMessageBox.No]):
+            self.window._reset_local_data()
+        self.assertEqual(chat.draft_text(), "normal session draft")
+        self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
+
     def test_rebinding_persists_and_conflicts_do_not_replace_existing_binding(self) -> None:
         from core.command_registry import ShortcutConflict
         original_search = self.window.command_manager.binding("navigation.search")

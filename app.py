@@ -443,6 +443,8 @@ class MainWindow(QMainWindow):
         )
         if answer != QMessageBox.Yes:
             return
+        if not self._confirm_durable_draft_replacement():
+            return
         try:
             report = self.data.local_data.import_json(path, replace=True)
         except (DataStoreError, DataValidationError, OSError) as exc:
@@ -464,6 +466,8 @@ class MainWindow(QMainWindow):
         )
         if answer != QMessageBox.Yes:
             return
+        if not self._confirm_durable_draft_replacement():
+            return
         try:
             report = self.data.local_data.reset_local_content()
         except DataStoreError as exc:
@@ -471,6 +475,26 @@ class MainWindow(QMainWindow):
             return
         self.workspace.chat.refresh_after_durable_replacement()
         self._show_data_operation_result(self._data_operation_message("Reset", report))
+
+    def _confirm_durable_draft_replacement(self) -> bool:
+        """Require consent before replacement discards a session-owned normal draft.
+
+        Pending normal drafts and all Nobody state remain presentation-local. A
+        concrete persistent draft cannot safely follow an imported record with the
+        same ID, so Settings makes that loss explicit before invoking the durable
+        service operation.
+        """
+
+        if not self.workspace.chat.has_replaceable_persistent_draft():
+            return True
+        return QMessageBox.warning(
+            self,
+            "Discard session draft?",
+            "This operation replaces durable sessions. The unsent draft attached to the current "
+            "persistent session will be discarded. Pending normal and Nobody drafts are preserved.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        ) == QMessageBox.Yes
 
     def _apply_appearance_changes(self, changes: dict) -> None:
         """Validate a Settings appearance delta, persist accepted values, and redraw.
