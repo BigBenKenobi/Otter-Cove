@@ -129,6 +129,14 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertIn("Excluded:", panel.data_result.text())
         self.assertIn("Nobody/incognito sessions", panel.data_result.text())
 
+        # The visible settings path must surface the service's typed protected
+        # destination error instead of allowing dialog filtering to be its only
+        # safeguard.  The test store is disposable and remains readable below.
+        with patch("app.QFileDialog.getSaveFileName", return_value=(str(self.data.store.path), "JSON")):
+            self.window._export_local_data()
+        self.assertIn("protected active application storage", panel.data_result.text())
+        self.assertIsNotNone(self.data.sessions.get_persistent_session(session.id))
+
         malformed = Path(self.tmp.name) / "malformed.json"
         malformed.write_text("not json", encoding="utf-8")
         with (
