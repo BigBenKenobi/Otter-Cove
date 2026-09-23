@@ -8,16 +8,15 @@
 | Task | Status | Record |
 |---|---|---|
 | OC-00 | PASSED | [00-baseline.md](00-baseline.md) |
-| OC-01 | NOT STARTED | — |
+| OC-01 | PASSED | [01-export-targets.md](01-export-targets.md) |
 | OC-02 | NOT STARTED | — |
 | OC-03 | NOT STARTED | — |
 | OC-04 | NOT STARTED | — |
 
-Current packet: `01-A`.
+Current packet: `02-A`.
 
-Next command: read `docs/task-packets/the-word-of-god/01-A-export-targets.md` and the `OC-01` section of `PLAN.md` before changing code.
+Next command: read `docs/task-packets/the-word-of-god/02-A-replacement-lifecycle.md` and the `OC-02` section of `PLAN.md` before changing code.
 
 Blockers: none for the automated Pilot 1 gates.
 
 Native/reference status: pending. The run used Qt `offscreen` on Fedora 44; its smoke log is supplementary only. `docs/reference/` is ignored and absent from this checkout, so original-reference parity cannot be assessed.
-

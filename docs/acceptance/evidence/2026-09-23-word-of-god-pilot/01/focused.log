@@ -1,0 +1,28 @@
+test_atomic_export_reset_and_import_preserve_stable_ids (tests.test_persistence.PersistenceTests.test_atomic_export_reset_and_import_preserve_stable_ids) ... ok
+test_corrupt_store_is_reported_and_never_replaced (tests.test_persistence.PersistenceTests.test_corrupt_store_is_reported_and_never_replaced) ... ok
+test_credential_like_configuration_is_rejected (tests.test_persistence.PersistenceTests.test_credential_like_configuration_is_rejected) ... ok
+test_export_rejects_active_store_aliases_and_sidecars_before_mutation (tests.test_persistence.PersistenceTests.test_export_rejects_active_store_aliases_and_sidecars_before_mutation)
+A JSON export cannot replace a disposable live SQLite store by any alias. ... ok
+test_failed_import_rolls_back_without_erasing_existing_content (tests.test_persistence.PersistenceTests.test_failed_import_rolls_back_without_erasing_existing_content) ... ok
+test_fresh_store_creates_current_schema_and_round_trips_domain_records (tests.test_persistence.PersistenceTests.test_fresh_store_creates_current_schema_and_round_trips_domain_records) ... ok
+test_incognito_session_disposal_removes_messages_from_process_memory (tests.test_persistence.PersistenceTests.test_incognito_session_disposal_removes_messages_from_process_memory)
+Closing a Nobody session must end access to its transient records. ... ok
+test_incognito_session_never_enters_sqlite_or_export (tests.test_persistence.PersistenceTests.test_incognito_session_never_enters_sqlite_or_export) ... ok
+test_non_current_export_marker_is_rejected (tests.test_persistence.PersistenceTests.test_non_current_export_marker_is_rejected) ... ok
+test_otter_cove_default_paths_and_override (tests.test_persistence.PersistenceTests.test_otter_cove_default_paths_and_override) ... ok
+test_unavailable_store_reports_recovery_without_creating_replacement (tests.test_persistence.PersistenceTests.test_unavailable_store_reports_recovery_without_creating_replacement) ... ok
+test_v1_fixture_migrates_to_v2_without_losing_rows (tests.test_persistence.PersistenceTests.test_v1_fixture_migrates_to_v2_without_losing_rows) ... ok
+test_all_harmony_modes_are_deterministic_and_keep_exact_accent (tests.test_theme_logic.ThemeLogicTests.test_all_harmony_modes_are_deterministic_and_keep_exact_accent) ... ok
+test_bundle_round_trip_is_versioned_and_preserves_fields (tests.test_theme_logic.ThemeLogicTests.test_bundle_round_trip_is_versioned_and_preserves_fields) ... ok
+test_export_rejects_protected_target_before_creating_parent (tests.test_theme_logic.ThemeLogicTests.test_export_rejects_protected_target_before_creating_parent)
+Theme exports share the shell's active-storage protection policy. ... ok
+test_harmony_apply_mapping_has_all_semantic_tokens (tests.test_theme_logic.ThemeLogicTests.test_harmony_apply_mapping_has_all_semantic_tokens) ... ok
+test_invalid_color_does_not_validate (tests.test_theme_logic.ThemeLogicTests.test_invalid_color_does_not_validate) ... ok
+test_invalid_json_never_overwrites_existing_file (tests.test_theme_logic.ThemeLogicTests.test_invalid_json_never_overwrites_existing_file) ... ok
+test_neutral_harmony_is_valid_and_deterministic (tests.test_theme_logic.ThemeLogicTests.test_neutral_harmony_is_valid_and_deterministic) ... ok
+test_unsupported_version_is_rejected (tests.test_theme_logic.ThemeLogicTests.test_unsupported_version_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.028s
+
+OK
