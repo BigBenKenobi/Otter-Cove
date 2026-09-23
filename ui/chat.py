@@ -354,6 +354,36 @@ class ChatSurface(QWidget):
         self.chat_label.setText("New Chat⌄")
         self._update_session_status()
 
+    def refresh_after_durable_replacement(self) -> None:
+        """Refresh only durable session state after a successful import or reset.
+
+        Settings replacement never owns Nobody records, drafts, mode, or the
+        active private view, so it must not reuse :meth:`reset_chat`. Persistent
+        session IDs and drafts point into tables that were replaced; this method
+        drops those stale cache entries, preserves the pending normal draft, and
+        renders a current durable session only when normal mode is active.
+        """
+
+        # Save first so a pending normal draft remains available. A draft attached
+        # to a concrete persistent ID is intentionally discarded: its owner was
+        # deleted/replaced and cannot safely be attributed to an imported record
+        # that happens to reuse the same stable ID.
+        self._save_active_draft()
+        private_id = self._mode_session_ids[True]
+        for key in tuple(self._drafts):
+            if key not in {private_id, self._pending_draft_key(True), self._pending_draft_key(False)}:
+                self._drafts.pop(key, None)
+
+        latest = self.sessions.latest_persistent_session()
+        self._mode_session_ids[False] = latest.id if latest is not None else None
+        if self._session_incognito:
+            # Do not switch a private user into durable content merely because a
+            # replacement completed in the background settings operation.
+            self._render_active_session()
+            return
+        self._session_id = self._mode_session_ids[False]
+        self._render_active_session()
+
     def apply_appearance(self, preferences: dict) -> None:
         self._appearance.update(preferences)
         self.prompt.set_full_width(bool(self._appearance.get("full_width", False)))

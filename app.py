@@ -448,7 +448,7 @@ class MainWindow(QMainWindow):
         except (DataStoreError, DataValidationError, OSError) as exc:
             self._show_data_operation_result(str(exc), failed=True)
             return
-        self.workspace.chat.reset_chat()
+        self.workspace.chat.refresh_after_durable_replacement()
         self._show_data_operation_result(self._data_operation_message("Import", report))
 
     def _reset_local_data(self) -> None:
@@ -469,7 +469,7 @@ class MainWindow(QMainWindow):
         except DataStoreError as exc:
             self._show_data_operation_result(exc.user_message(), failed=True)
             return
-        self.workspace.chat.reset_chat()
+        self.workspace.chat.refresh_after_durable_replacement()
         self._show_data_operation_result(self._data_operation_message("Reset", report))
 
     def _apply_appearance_changes(self, changes: dict) -> None:

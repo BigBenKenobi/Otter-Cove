@@ -127,6 +127,7 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertTrue(export_path.exists())
         self.assertIn("Export completed", panel.data_result.text())
         self.assertIn("Excluded:", panel.data_result.text())
+
         self.assertIn("Nobody/incognito sessions", panel.data_result.text())
 
         # The visible settings path must surface the service's typed protected
@@ -180,6 +181,27 @@ class SettingsAndCommandQtAcceptanceTests(unittest.TestCase):
         self.assertEqual(self.data.sessions.list_persistent_sessions(), [])
         self.assertIn("Reset completed", panel.data_result.text())
         self.assertIn("Excluded:", panel.data_result.text())
+
+    def test_reset_preserves_live_nobody_session_and_draft(self) -> None:
+        """Durable reset cannot use New Chat's private-session disposal lifecycle."""
+
+        from PySide6.QtWidgets import QMessageBox
+
+        chat = self.window.workspace.chat
+        chat.nobody.setChecked(True)
+        chat.set_draft_text("private message")
+        chat.prompt.submit()
+        self.app.processEvents()
+        chat.set_draft_text("private unsent draft")
+        private_id = chat.session_id
+        self.assertTrue(self.data.sessions.is_incognito(private_id))
+        with patch("app.QMessageBox.warning", return_value=QMessageBox.Yes):
+            self.window._reset_local_data()
+        self.app.processEvents()
+        self.assertTrue(chat.nobody.isChecked())
+        self.assertEqual(chat.session_id, private_id)
+        self.assertTrue(self.data.sessions.is_incognito(private_id))
+        self.assertEqual(chat.draft_text(), "private unsent draft")
 
     def test_rebinding_persists_and_conflicts_do_not_replace_existing_binding(self) -> None:
         from core.command_registry import ShortcutConflict
