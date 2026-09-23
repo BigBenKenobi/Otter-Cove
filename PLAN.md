@@ -35,6 +35,7 @@ deferred. This documentation change does not implement the planned fixes.
 | [docs/TESTING.md](docs/TESTING.md), [FEDORA_CHECKLIST](docs/FEDORA_CHECKLIST.md) | Commands and native test procedure supporting this plan |
 | `docs/reviews/`, `docs/acceptance/`, `docs/archive/` | Dated findings/evidence/history; never alternative current instructions |
 | [docs/planning/](docs/planning/README.md) | Compatibility pointers to this replacement; no active standalone proposals |
+| [The word of God](docs/task-packets/the-word-of-god/README.md) | Subordinate Terra execution packets for the OC-00–04 pilot; no new scope or implementation claim |
 
 ## Current baseline
 

@@ -15,6 +15,11 @@ data-protection fixes before landing the R2 data-management UI in PR #6.
 The detailed [review](docs/reviews/2026-09-23-current-implementation.md) records
 the reproduced issues. The replacement plan itself changes no application code.
 
+For the Terra (Medium) implementation trial, use
+[The word of God — Pilot 1](docs/task-packets/the-word-of-god/README.md).
+It supplies ordered OC-00–04 packets, evidence gates and a copyable launch prompt.
+The packet set is ready for a trial; the fixes have not been implemented by it.
+
 ## What is implemented
 
 - Application shell and explicit available/unavailable routes.
