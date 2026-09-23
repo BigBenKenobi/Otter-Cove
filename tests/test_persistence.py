@@ -251,6 +251,21 @@ class PersistenceTests(unittest.TestCase):
             self.assertEqual(services.sessions.get_persistent_session(kept.id).title, "Keep after rejected import")
         services.close()
 
+    def test_prepared_import_applies_validated_bytes_after_source_changes(self) -> None:
+        """Confirmation applies the prepared snapshot, never a file reread later."""
+
+        services = AppDataServices.open(self.db_path)
+        original = services.sessions.create_session("Confirmed snapshot")
+        source = self.root / "confirmed.json"
+        source.write_text(json.dumps(services.local_data.snapshot()), encoding="utf-8")
+        prepared = services.local_data.prepare_import(source)
+        source.write_text(json.dumps({"format": "wrong"}), encoding="utf-8")
+        services.sessions.create_session("Unconfirmed replacement")
+        report = services.local_data.apply_prepared_import(prepared)
+        self.assertEqual(report.counts["sessions"], 1)
+        self.assertEqual(services.sessions.list_persistent_sessions()[0].id, original.id)
+        services.close()
+
     def test_unavailable_store_reports_recovery_without_creating_replacement(self) -> None:
         blocked_parent = self.root / "not-a-directory"
         blocked_parent.write_text("block", encoding="utf-8")

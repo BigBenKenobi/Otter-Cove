@@ -433,11 +433,18 @@ class MainWindow(QMainWindow):
         )
         if not path:
             return
+        try:
+            prepared = self.data.local_data.prepare_import(path)
+        except (DataStoreError, DataValidationError, OSError) as exc:
+            self._show_data_operation_result(str(exc), failed=True)
+            return
+        count_text = ", ".join(f"{table}: {count}" for table, count in prepared.counts.items())
         answer = QMessageBox.question(
             self,
             "Replace local content?",
             "Import replaces sessions/messages, models, documents, Brain items, notes, tasks and Gallery metadata. "
-            "Credentials, Nobody sessions, preferences and window geometry are not imported.",
+            "Credentials, Nobody sessions, preferences and window geometry are not imported.\n\n"
+            f"Validated incoming records: {count_text}",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -446,7 +453,7 @@ class MainWindow(QMainWindow):
         if not self._confirm_durable_draft_replacement():
             return
         try:
-            report = self.data.local_data.import_json(path, replace=True)
+            report = self.data.local_data.apply_prepared_import(prepared, replace=True)
         except (DataStoreError, DataValidationError, OSError) as exc:
             self._show_data_operation_result(str(exc), failed=True)
             return

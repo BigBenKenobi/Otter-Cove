@@ -60,6 +60,20 @@ class DataOperationReport:
     excluded: tuple[str, ...] = ("credentials", "Nobody/incognito sessions", "QSettings preferences/geometry")
 
 
+@dataclass(frozen=True)
+class PreparedImport:
+    """Immutable validated import bytes and counts awaiting a UI confirmation.
+
+    ``LocalDataService`` is the only normal creator.  Apply reparses and validates
+    its JSON bytes defensively, so a caller cannot substitute mutable content or
+    forge a result merely by constructing this small transport object.
+    """
+
+    source: str
+    payload_json: str
+    counts: dict[str, int]
+
+
 class SessionService:
     """Present persistent and process-local Nobody sessions through one API.
 
@@ -337,6 +351,21 @@ class LocalDataService:
         counts = {table: len(rows) for table, rows in payload["content"].items()}
         return DataOperationReport("export", str(target), counts, self.TABLES)
 
+    def prepare_import(self, path: str | Path) -> PreparedImport:
+        """Read and validate one file once, retaining immutable confirmation input."""
+
+        source = Path(path).expanduser().resolve()
+        try:
+            payload = json.loads(source.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise DataValidationError(f"Cannot read Otter Cove data export: {exc}") from exc
+        self._validate_import(payload)
+        content = payload["content"]
+        self._validate_row_shapes(content)
+        self._validate_snapshot_semantics(content)
+        counts = {table: len(content[table]) for table in self.TABLES}
+        return PreparedImport(str(source), json.dumps(payload, ensure_ascii=False, sort_keys=True), counts)
+
     def import_json(self, path: str | Path, *, replace: bool = True) -> DataOperationReport:
         """Validate then transactionally import a versioned local-data snapshot.
 
@@ -348,11 +377,21 @@ class LocalDataService:
         parsing exceptions through a Qt signal handler.
         """
 
-        source = Path(path).expanduser().resolve()
+        return self.apply_prepared_import(self.prepare_import(path), replace=replace)
+
+    def apply_prepared_import(self, prepared: PreparedImport, *, replace: bool = True) -> DataOperationReport:
+        """Transactionally apply exactly a previously prepared snapshot.
+
+        Revalidation protects callers that manually construct a ``PreparedImport``;
+        no filesystem path is reopened, so confirmation cannot race a changed file.
+        """
+
+        if not isinstance(prepared, PreparedImport):
+            raise DataValidationError("Import must use a service-prepared snapshot.")
         try:
-            payload = json.loads(source.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            raise DataValidationError(f"Cannot read Otter Cove data export: {exc}") from exc
+            payload = json.loads(prepared.payload_json)
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise DataValidationError("Prepared import snapshot is malformed.") from exc
         self._validate_import(payload)
         content = payload["content"]
         self._validate_row_shapes(content)
@@ -374,7 +413,7 @@ class LocalDataService:
             raise DataValidationError(
                 f"Import contains malformed record values: {exc}"
             ) from exc
-        return DataOperationReport("import", str(source), counts, self.TABLES)
+        return DataOperationReport("import", prepared.source, counts, self.TABLES)
 
     def reset_local_content(self) -> DataOperationReport:
         """Transactionally delete exportable durable content and report row counts.
