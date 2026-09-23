@@ -105,6 +105,35 @@ class PersistenceTests(unittest.TestCase):
         self.assertEqual(services.models.list(), [])
         services.close()
 
+    def test_credential_endpoint_is_rejected_without_leaking_or_inserting(self) -> None:
+        """Structured URL userinfo/query credentials never reach the model table."""
+
+        services = AppDataServices.open(self.db_path)
+        unsafe = "https://synthetic-user:synthetic-pass@example.invalid/?api_key=synthetic"
+        with self.assertRaisesRegex(PersistencePolicyError, "endpoint") as caught:
+            services.models.create("Unsafe", "api", endpoint=unsafe)
+        self.assertNotIn("synthetic-pass", str(caught.exception))
+        self.assertEqual(services.models.list(), [])
+        services.models.create("Safe", "api", endpoint="https://example.invalid/v1", config={"token_limit": 1024})
+        self.assertEqual(len(services.models.list()), 1)
+        services.close()
+
+    def test_legacy_unsafe_structured_record_blocks_export_without_writing(self) -> None:
+        """Snapshot rechecks seeded legacy JSON instead of leaking it to export."""
+
+        services = AppDataServices.open(self.db_path)
+        services.store.connection.execute(
+            "INSERT INTO models(id,name,provider,endpoint,enabled,created_at,updated_at,config_json) VALUES(?,?,?,?,?,?,?,?)",
+            ("legacy", "Legacy", "api", "https://example.invalid", 1, "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z", '{"endpoint":"https://u:p@example.invalid"}'),
+        )
+        destination = self.root / "existing.json"
+        destination.write_text("keep", encoding="utf-8")
+        with self.assertRaises(DataValidationError) as caught:
+            services.local_data.export_json(destination)
+        self.assertNotIn("u:p", str(caught.exception))
+        self.assertEqual(destination.read_text(encoding="utf-8"), "keep")
+        services.close()
+
     def test_atomic_export_reset_and_import_preserve_stable_ids(self) -> None:
         services = AppDataServices.open(self.db_path)
         session = services.sessions.create_session("Round trip")

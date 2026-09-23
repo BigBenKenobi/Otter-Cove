@@ -305,6 +305,13 @@ class LocalDataService:
         for table in self.TABLES:
             rows = conn.execute(f"SELECT * FROM {table}").fetchall()
             content[table] = [dict(row) for row in rows]
+            for index, row in enumerate(content[table]):
+                for field, raw in row.items():
+                    if field.endswith("_json"):
+                        try:
+                            assert_no_credentials(json.loads(raw), path=f"export.{table}[{index}].{field}")
+                        except (TypeError, json.JSONDecodeError) as exc:
+                            raise DataValidationError(f"Cannot export {table}.{field}: stored structured data is malformed.") from exc
         payload = {
             "format": EXPORT_FORMAT,
             "version": EXPORT_VERSION,

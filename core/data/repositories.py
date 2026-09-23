@@ -17,7 +17,7 @@ from .models import (
     SessionRecord,
     TaskRecord,
 )
-from .policy import assert_no_credentials
+from .policy import assert_no_credentials, assert_safe_endpoint
 from .timeutil import utc_now
 
 
@@ -193,6 +193,7 @@ class ModelRepository(RepositoryBase):
     ) -> ModelRecord:
         safe_config = dict(config or {})
         assert_no_credentials(safe_config, path="model.config")
+        assert_safe_endpoint(endpoint, path="model.endpoint")
         now = created_at or utc_now()
         record = ModelRecord(
             id=record_id or new_id("model"),
