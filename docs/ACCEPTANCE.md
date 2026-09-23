@@ -16,6 +16,11 @@ No new manual pass is claimed. Steps 01/53 retain their prior scoped acceptance.
 [65/65 record](acceptance/2026-09-21-offscreen.md) is historical. All are offscreen;
 known findings remain open even with a green suite.
 
+Pilot OC-00 recorded a fresh combined local baseline at `fb41db8`: 74 tests,
+zero skips/expected failures and an offscreen smoke pass. Its [run record](acceptance/evidence/2026-09-23-word-of-god-pilot/00-baseline.md) preserves the
+open OC-01–04 findings; it does not accept feature 54, native desktop behavior or
+reference parity.
+
 | Step | Feature | State | Evidence / remaining boundary |
 |---|---|---|---|
 | 01 | Application shell | Done (scoped baseline) | [Prior record](acceptance/step-01.md); step 55 remains open |

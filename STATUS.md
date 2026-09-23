@@ -7,15 +7,18 @@ the 24 OC improvements, unique Sessions/Composer packages, eight-area execution
 order and all 55 original feature criteria. The earlier PR #8/#9 standalone
 proposals are superseded; `docs/planning/` contains pointers only.
 
-**Next action:** finish OC-00's implementation-baseline check, then implement
-**OC-01–04** before landing the R2 recovery UI from
-[PR #6](https://github.com/BigBenKenobi/Otter-Cove/pull/6).
+**Next action:** implement **OC-01–04** on the isolated Pilot 1 branch, beginning
+with OC-01. The reviewed R2 recovery UI is integrated locally but remains
+unpublished pending the Pilot gates.
 Model configuration and execution remain deferred.
 
 ## Current implementation
 
-- The reviewed main runtime is `6aa802219f4130ac4732039bda01b0a870934cfe`.
-  Plan consolidation changes documentation only; it does not resolve code defects.
+- Pilot baseline `fb41db85e8108ea0606b329da7c83b0e8d7967b3` combines current main
+  `ada8b9992786006af57e34631096c3a195108a55` with the reviewed PR #6 runtime
+  delta `a560b5d7c7d88fc6d941e0d5da8542c9ac7d64c3`. Its evidence is in
+  `docs/acceptance/evidence/2026-09-23-word-of-god-pilot/`; it is a local
+  implementation baseline, not a merged or native-accepted release.
 - Shell, floating windows, shared feedback/states, SQLite services, themes,
   background effects, Appearance and shortcuts are substantially implemented.
 - R1's failed-send retention/retry, normal/private view/draft isolation, New Chat
@@ -47,6 +50,7 @@ reproductions from source observations and evidence gaps.
 | Main runtime `6aa8022` | 73/73 tests, no skips | 23 September; Ubuntu 24.04.3, Python 3.12.14, PySide6/Qt 6.11.2, offscreen |
 | PR #6 `a560b5d` | 74/74 tests, no skips; offscreen smoke PASS | Same environment; separate unmerged implementation |
 | Earlier Fedora evidence | 65/65 plus offscreen smoke | [21 September historical record](docs/acceptance/2026-09-21-offscreen.md); not current native acceptance |
+| Pilot OC-00 combined baseline `fb41db8` | 74/74, no skips/expected failures; offscreen smoke pass | [Pilot record](docs/acceptance/evidence/2026-09-23-word-of-god-pilot/00-baseline.md); source is local and native acceptance remains pending |
 
 Additional probes reproduced the listed code gaps despite the passing suites.
 Consolidation validates documentation coverage/links/order, not new runtime behavior.
