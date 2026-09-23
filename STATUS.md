@@ -7,8 +7,8 @@ the 24 OC improvements, unique Sessions/Composer packages, eight-area execution
 order and all 55 original feature criteria. The earlier PR #8/#9 standalone
 proposals are superseded; `docs/planning/` contains pointers only.
 
-**Next action:** implement **OC-02–04** on the isolated Pilot 1 branch, beginning
-with OC-02. The reviewed R2 recovery UI is integrated locally but remains
+**Next action:** implement **OC-03–04** on the isolated Pilot 1 branch, beginning
+with OC-03. The reviewed R2 recovery UI is integrated locally but remains
 unpublished pending the Pilot gates.
 Model configuration and execution remain deferred.
 
@@ -33,8 +33,8 @@ Model configuration and execution remain deferred.
 1. **OC-01:** local-data and theme export now reject active database, sidecar,
    settings, symlink and hard-link targets on the Pilot branch; native/reviewer
    acceptance remains pending.
-2. **OC-02:** R2 reset discards the Nobody state its confirmation excludes; use a
-   dedicated durable-data refresh rather than New Chat.
+2. **OC-02:** replacement now preserves excluded Nobody state and uses a dedicated
+   durable-data refresh on the Pilot branch; native/reviewer acceptance remains pending.
 3. **OC-03:** validate complete supported import snapshots, types and stable IDs.
 4. **OC-04:** reject credentials in existing structured endpoint/config fields
    before storage/import/export.
