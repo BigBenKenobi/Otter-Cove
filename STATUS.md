@@ -7,7 +7,8 @@ the 24 OC improvements, unique Sessions/Composer packages, eight-area execution
 order and all 55 original feature criteria. The earlier PR #8/#9 standalone
 proposals are superseded; `docs/planning/` contains pointers only.
 
-**Next action:** implement **OC-04** on the isolated Pilot 1 branch. The reviewed
+**Next action:** Pilot 1 OC-00–04 is implemented locally and awaits native/reference
+and reviewer acceptance. Do not start OC-05 from this handoff. The reviewed
 R2 recovery UI is integrated locally but remains
 unpublished pending the Pilot gates.
 Model configuration and execution remain deferred.
