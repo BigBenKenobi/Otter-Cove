@@ -148,6 +148,14 @@ class PersistenceTests(unittest.TestCase):
         alias.symlink_to(self.db_path)
         with self.assertRaisesRegex(DataValidationError, "protected active"):
             services.local_data.export_json(alias)
+        hard_link = self.root / "hard-link.sqlite3"
+        os.link(self.db_path, hard_link)
+        with self.assertRaisesRegex(DataValidationError, "aliases protected"):
+            services.local_data.export_json(hard_link)
+        parent_alias = self.root / "parent-alias"
+        parent_alias.symlink_to(self.root, target_is_directory=True)
+        with self.assertRaisesRegex(DataValidationError, "protected active"):
+            services.local_data.export_json(parent_alias / self.db_path.name)
         preferences = self.root / "settings.ini"
         preferences.write_text("[appearance]\\ntheme=Forest\\n", encoding="utf-8")
         with self.assertRaisesRegex(DataValidationError, "protected active"):

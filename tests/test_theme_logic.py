@@ -144,6 +144,13 @@ class ThemeLogicTests(unittest.TestCase):
                 save_theme_bundle_atomic(alias, bundle, protected_paths=(protected,))
             self.assertEqual(protected.read_bytes(), b"SQLite format 3\\x00")
 
+            settings = root / "settings.ini"
+            settings.write_text("[appearance]\\ntheme=Forest\\n", encoding="utf-8")
+            for target in (protected, protected.with_name("active.sqlite3-wal"), protected.with_name("active.sqlite3-shm"), settings):
+                with self.assertRaisesRegex(ThemeBundleError, "protected active"):
+                    save_theme_bundle_atomic(target, bundle, protected_paths=(protected, protected.with_name("active.sqlite3-wal"), protected.with_name("active.sqlite3-shm"), settings))
+            self.assertEqual(settings.read_text(encoding="utf-8"), "[appearance]\\ntheme=Forest\\n")
+
 
 if __name__ == "__main__":
     unittest.main()
