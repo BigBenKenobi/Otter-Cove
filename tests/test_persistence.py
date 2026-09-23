@@ -8,6 +8,7 @@ outside durable storage and are erased when their process-local lifecycle ends.
 from __future__ import annotations
 
 import json
+import copy
 import os
 import sqlite3
 import tempfile
@@ -228,6 +229,26 @@ class PersistenceTests(unittest.TestCase):
             services.local_data.import_json(bad_import)
         self.assertIsNotNone(services.sessions.get_persistent_session(original.id))
         self.assertEqual(len(services.sessions.list_persistent_sessions()), 1)
+        services.close()
+
+    def test_import_contract_rejects_incomplete_future_and_broken_snapshots(self) -> None:
+        """Replacement validation rejects all unsafe envelopes before deleting live rows."""
+
+        services = AppDataServices.open(self.db_path)
+        kept = services.sessions.create_session("Keep after rejected import")
+        services.sessions.add_message(kept.id, "user", "stable")
+        valid = services.local_data.snapshot()
+        cases = []
+        future = copy.deepcopy(valid); future["schema_version"] = 999; cases.append(future)
+        missing = copy.deepcopy(valid); del missing["content"]["notes"]; cases.append(missing)
+        null_id = copy.deepcopy(valid); null_id["content"]["sessions"][0]["id"] = None; cases.append(null_id)
+        bad_ref = copy.deepcopy(valid); bad_ref["content"]["messages"][0]["session_id"] = "missing"; cases.append(bad_ref)
+        for index, payload in enumerate(cases):
+            path = self.root / f"rejected-{index}.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaises(DataValidationError):
+                services.local_data.import_json(path)
+            self.assertEqual(services.sessions.get_persistent_session(kept.id).title, "Keep after rejected import")
         services.close()
 
     def test_unavailable_store_reports_recovery_without_creating_replacement(self) -> None:

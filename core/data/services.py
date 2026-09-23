@@ -10,6 +10,7 @@ messages reachable inside the running process.
 from __future__ import annotations
 
 import json
+import math
 import os
 import sqlite3
 import tempfile
@@ -239,6 +240,16 @@ class LocalDataService:
         "gallery_items": ("id", "path", "created_at", "updated_at"),
     }
 
+    # Import is a full-snapshot operation. These compact rules mirror the SQLite
+    # records without turning ordinary user-authored title/content text into enums.
+    _STRING_FIELDS = {
+        "sessions": ("id", "created_at", "updated_at"), "messages": ("id", "session_id", "role", "content", "created_at"),
+        "models": ("id", "name", "provider", "created_at", "updated_at"), "documents": ("id", "title", "created_at", "updated_at"),
+        "brain_items": ("id", "kind", "title", "content", "created_at", "updated_at"),
+        "notes": ("id", "title", "created_at", "updated_at"), "tasks": ("id", "title", "created_at", "updated_at"),
+        "gallery_items": ("id", "path", "created_at", "updated_at"),
+    }
+
     def __init__(
         self,
         store: SQLiteStore,
@@ -345,6 +356,7 @@ class LocalDataService:
         self._validate_import(payload)
         content = payload["content"]
         self._validate_row_shapes(content)
+        self._validate_snapshot_semantics(content)
         counts = {table: len(content.get(table, [])) for table in self.TABLES}
         try:
             # Replacement is deliberately deferred until every structural check
@@ -396,6 +408,11 @@ class LocalDataService:
         unknown = set(payload["content"]) - set(self.TABLES)
         if unknown:
             raise DataValidationError(f"Export contains unsupported content tables: {', '.join(sorted(unknown))}")
+        missing = set(self.TABLES) - set(payload["content"])
+        if missing:
+            raise DataValidationError(f"Export is incomplete; missing content tables: {', '.join(sorted(missing))}")
+        if payload.get("schema_version") != self.store.schema_version():
+            raise DataValidationError("Export schema version is unsupported by this installation.")
         assert_no_credentials(payload, path="import")
 
     def _validate_row_shapes(self, content: dict[str, Any]) -> None:
@@ -414,6 +431,46 @@ class LocalDataService:
                         f"Cannot import {table}[{index}]: missing required fields "
                         f"{', '.join(missing)}."
                     )
+
+    def _validate_snapshot_semantics(self, content: dict[str, Any]) -> None:
+        """Reject unsafe identity, relationship, scalar, and nested-field shapes pre-write."""
+
+        ids: dict[str, set[str]] = {}
+        for table in self.TABLES:
+            ids[table] = set()
+            for index, row in enumerate(self._rows(content, table)):
+                for field in self._STRING_FIELDS[table]:
+                    value = row[field]
+                    if not isinstance(value, str) or not value.strip():
+                        raise DataValidationError(f"Cannot import {table}[{index}].{field}: expected nonempty string.")
+                if row["id"] in ids[table]:
+                    raise DataValidationError(f"Cannot import {table}[{index}]: duplicate stable ID.")
+                ids[table].add(row["id"])
+                for field in ("metadata_json", "config_json", "tags_json"):
+                    if field in row:
+                        expected = list if field == "tags_json" else dict
+                        value = self._nested_json(row, table, field, expected)
+                        if field == "tags_json" and not all(isinstance(tag, str) for tag in value):
+                            raise DataValidationError(f"Cannot import {table}[{index}].tags_json: expected string list.")
+                for field in ("archived", "enabled", "pinned", "favourite"):
+                    if field in row and row[field] not in (0, 1, False, True):
+                        raise DataValidationError(f"Cannot import {table}[{index}].{field}: expected boolean 0/1.")
+                if table == "messages":
+                    if not isinstance(row["ordinal"], int) or isinstance(row["ordinal"], bool) or row["ordinal"] < 0:
+                        raise DataValidationError(f"Cannot import messages[{index}].ordinal: expected nonnegative integer.")
+                    if row["role"] not in {"user", "assistant", "system"}:
+                        raise DataValidationError(f"Cannot import messages[{index}].role: unsupported role.")
+                if table == "brain_items" and "confidence" in row:
+                    if not isinstance(row["confidence"], (int, float)) or isinstance(row["confidence"], bool) or not math.isfinite(row["confidence"]):
+                        raise DataValidationError(f"Cannot import brain_items[{index}].confidence: expected finite number.")
+        ordinals: set[tuple[str, int]] = set()
+        for index, row in enumerate(self._rows(content, "messages")):
+            if row["session_id"] not in ids["sessions"]:
+                raise DataValidationError(f"Cannot import messages[{index}].session_id: missing session reference.")
+            key = (row["session_id"], row["ordinal"])
+            if key in ordinals:
+                raise DataValidationError(f"Cannot import messages[{index}]: duplicate session ordinal.")
+            ordinals.add(key)
 
     @staticmethod
     def _rows(content: dict[str, Any], table: str) -> list[dict[str, Any]]:
