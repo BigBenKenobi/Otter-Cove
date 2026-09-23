@@ -1,4 +1,4 @@
-# Existing implementation improvements — superseded
+# Foundation and desktop — superseded
 
 The standalone proposal was consolidated on 23 September 2026.
 Use the [replacement PLAN.md](../../PLAN.md#existing-implementation-tasks) for current tasks,

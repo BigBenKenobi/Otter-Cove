@@ -2,7 +2,7 @@
 
 Status: planning evidence, not release acceptance
 
-Implementation plan: [24 improvement tasks](../planning/current-implementation-improvement-plan.md)
+Implementation plan: [current replacement plan](../../PLAN.md#existing-implementation-tasks)
 
 ## Sources and method
 

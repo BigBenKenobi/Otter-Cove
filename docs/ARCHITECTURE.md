@@ -23,9 +23,11 @@ transactional; export is atomic. Migrations must preserve existing content or fa
 without replacing the store. No plaintext credentials belong in normal storage.
 
 Incognito content must remain transient, excluded from history/export/search and
-memory extraction. Closing a private session must dispose it. The current store
-exclusion works, but transition rendering, disposal and draft ownership remain
-open defects in PLAN.md; this contract is not a claim those flows are complete.
+memory extraction. Closing a private session must dispose it. Main already has
+normal/private view and draft isolation plus New Chat disposal.
+The replacement PLAN tracks the remaining explicit transitions, durable-reset
+preservation and shutdown/consumer boundaries; the contract does not imply full
+feature acceptance.
 Failed saves must retain editable drafts; persistence errors must be recoverable.
 
 ## Shell, windows and commands

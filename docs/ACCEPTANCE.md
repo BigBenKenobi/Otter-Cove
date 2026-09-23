@@ -1,7 +1,7 @@
 # Acceptance ledger
 
 [PLAN.md](../PLAN.md) is the sole source of completion criteria. This ledger indexes
-state/evidence and does not redefine those criteria. Updated 21 September 2026.
+state/evidence and does not redefine those criteria. Updated 23 September 2026; documentation consolidation adds no accepted criteria.
 
 - **Not started:** no dedicated behavior (including unavailable route scaffolds).
 - **Partial:** implementation exists but requirements remain.
@@ -11,8 +11,10 @@ state/evidence and does not redefine those criteria. Updated 21 September 2026.
   imply the entire application meets the step-55 desktop release gate.
 
 No new manual pass is claimed. Steps 01/53 retain their prior scoped acceptance.
-[Current 65/65 offscreen record](acceptance/2026-09-21-offscreen.md) corroborates
-automated checks only. Known review findings remain open even with a green suite.
+[23 September review](reviews/2026-09-23-current-implementation.md) records
+73/73 on main and 74/74 plus offscreen smoke on separate PR #6. The
+[65/65 record](acceptance/2026-09-21-offscreen.md) is historical. All are offscreen;
+known findings remain open even with a green suite.
 
 | Step | Feature | State | Evidence / remaining boundary |
 |---|---|---|---|
@@ -43,33 +45,33 @@ automated checks only. Known review findings remain open even with a green suite
 | 25 | Gallery layers and history | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 26 | Inpaint workflow | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 27 | Library | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
-| 28 | Documents | Partial | Known implementation gaps; see PLAN |
+| 28 | Documents | Data foundation only | Records/services exist; text/Markdown editor and picker are not implemented |
 | 29 | Research Library | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 30 | Notes dock | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 31 | Tasks and local scheduler | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
-| 32 | Theme presets | Automated pass | [Current run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
-| 33 | Theme customization | Automated pass | [Current run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
-| 34 | Colour harmony generator | Automated pass | [Current run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
+| 32 | Theme presets | Automated pass | [Historical offscreen run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
+| 33 | Theme customization | Automated pass | [Historical offscreen run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
+| 34 | Colour harmony generator | Automated pass | [Historical offscreen run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
 | 35 | Fonts, density and frosted surfaces | Partial | Known implementation gaps; see PLAN |
-| 36 | Animated backgrounds | Automated pass | [Current run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
-| 37 | Theme save / share | Automated pass | [Current run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
-| 38 | Peek mode | Automated pass | [Current run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
-| 39 | Floating tool-window framework | Automated pass | [Current run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
-| 40 | Settings — Add Models | Partial | Known implementation gaps; see PLAN |
-| 41 | Settings — Added Models | Partial | Known implementation gaps; see PLAN |
+| 36 | Animated backgrounds | Automated pass | [Historical offscreen run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
+| 37 | Theme save / share | Automated pass | [Historical offscreen run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
+| 38 | Peek mode | Automated pass | [Historical offscreen run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
+| 39 | Floating tool-window framework | Automated pass | [Historical offscreen run](acceptance/2026-09-21-offscreen.md); native/visual/performance gates in PLAN |
+| 40 | Settings — Add Models | Data foundation only; deferred | Existing model records are not a configuration GUI; model work deferred |
+| 41 | Settings — Added Models | Data foundation only; deferred | No implemented registry-management UI on main |
 | 42 | Settings — AI Defaults | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 43 | Settings — Search | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 44 | Settings — Integrations | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 45 | Settings — Email navigation | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 46 | Settings — Reminders | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
 | 47 | Settings — Appearance | Partial | Known implementation gaps; see PLAN |
-| 48 | Sensitive-span presentation | Partial | Known implementation gaps; see PLAN |
-| 49 | Process/status presentation | Partial | Known implementation gaps; see PLAN |
+| 48 | Sensitive-span presentation | Preference only | Control correctly unavailable; SC-6 owns renderer/copy policy |
+| 49 | Process/status presentation | Storage-status UI only | Storage label is truthful; expandable supplied status belongs to SC-6 |
 | 50 | Keyboard commands and shortcut editor | Partial | Known implementation gaps; see PLAN |
 | 51 | Account flows | Not started | Unavailable scaffold or no dedicated UI; see PLAN |
-| 52 | Profile / Study Mode area | Partial | Known implementation gaps; see PLAN |
+| 52 | Profile / Study Mode area | Scaffold | Profile entry opens an unavailable route; local Study Mode behavior remains planned |
 | 53 | Shared states and feedback | Done (scoped baseline) | [Prior record](acceptance/step-53.md); step 55 remains open |
-| 54 | Persistence and application data | Partial | [Storage record](acceptance/step-54.md); management/recovery GUI incomplete |
+| 54 | Persistence and application data | Partial | [Storage record](acceptance/step-54.md); PR #6 recovery GUI pending OC-01–04 and review; no new acceptance |
 | 55 | Fedora desktop validation and release polish | Partial | Offscreen evidence only; native matrix pending |
 
 ## Updating evidence

@@ -1,60 +1,67 @@
 # Status
 
-Updated 22 September 2026. Start here when returning to the project.
+Updated 23 September 2026.
 
-**Current focus:** finish and verify Phase A foundations; correct the GUI review
-findings before expanding into new feature modules.
+**Current plan:** [PLAN.md](PLAN.md) is the consolidated replacement. It contains
+the 24 OC improvements, unique Sessions/Composer packages, eight-area execution
+order and all 55 original feature criteria. The earlier PR #8/#9 standalone
+proposals are superseded; `docs/planning/` contains pointers only.
 
-**Next action:** Begin R2 in [PLAN.md](PLAN.md): local-data management/recovery UI,
-then native foundation checks and animation measurements.
+**Next action:** finish OC-00's implementation-baseline check, then implement
+**OC-01–04** before landing the R2 recovery UI from
+[PR #6](https://github.com/BigBenKenobi/Otter-Cove/pull/6).
+Model configuration and execution remain deferred.
 
-## What works
+## Current implementation
 
-- Failed message storage preserves the complete composer draft and selected mode;
-  a successful retry clears it once and adds one message.
-- Normal and Nobody sessions render isolated messages, own separate drafts and show
-  truthful storage status; New Chat disposes transient private records.
-- The Nobody control expands for Large text / Roomy density at minimum window size.
-- Sensitive blur, Web Search and Shell controls are visibly unavailable until their
-  consumers exist; session storage status describes behavior that is implemented.
-- Shell, shared feedback/states, floating windows and persistent local data services.
-- Theme customization, harmony, named-theme import/export, animated backgrounds.
-- Appearance settings and shortcut editing. Most product workspaces remain scaffolds.
-- Steps 01/53 have scoped prior acceptance; this is not full release acceptance.
+- The reviewed main runtime is `6aa802219f4130ac4732039bda01b0a870934cfe`.
+  Plan consolidation changes documentation only; it does not resolve code defects.
+- Shell, floating windows, shared feedback/states, SQLite services, themes,
+  background effects, Appearance and shortcuts are substantially implemented.
+- R1's failed-send retention/retry, normal/private view/draft isolation, New Chat
+  private disposal, Nobody sizing and unavailable-control corrections are on main.
+- Most product workspaces remain scaffolds. A complete session browser, rich/status
+  renderers, local search and composer file utilities are planned next.
+- PR #6 contains the management/recovery UI and nested-JSON import correction on
+  its separate branch; it remains pending review and the additional fixes below.
 
-## Latest verification
+## Priority findings
 
-On 22 September, the current R1 workspace passed **73/73 tests with no skips**,
-plus the offscreen GUI smoke check. The run covers failed-send retry, bidirectional
-normal/Nobody isolation, session-owned drafts, transient disposal and Large/Roomy
-control sizing. The 1100×680 Large/Roomy state was also rendered and inspected
-offscreen. This is automated/supplementary evidence, not native desktop acceptance.
+1. **OC-01:** export can overwrite the live database; protect application paths.
+2. **OC-02:** R2 reset discards the Nobody state its confirmation excludes; use a
+   dedicated durable-data refresh rather than New Chat.
+3. **OC-03:** validate complete supported import snapshots, types and stable IDs.
+4. **OC-04:** reject credentials in existing structured endpoint/config fields
+   before storage/import/export.
 
-The 21 September **65/65** Fedora offscreen record remains historical evidence for
-the pre-rename source snapshot. Its durable logs and source hashes remain in
-[the acceptance record](docs/acceptance/2026-09-21-offscreen.md). Native
-pointer/dialog/scaling checks and animation performance are still pending.
+Further OC tasks cover expected errors, invalid preferences, long drafts, empty
+session restoration, explicit safe text rendering, themes, responsive/accessibility
+checks, bounded work/resources, CI, packaging and native acceptance. The
+[review record](docs/reviews/2026-09-23-current-implementation.md) distinguishes
+reproductions from source observations and evidence gaps.
 
-## Known open issues, in priority order
+## Latest code verification
 
-The reproduced R1 defects have targeted code fixes and offscreen regression
-coverage. Native visual/interaction acceptance and the broader incomplete feature
-steps remain open as recorded in PLAN.md; R2 is the next implementation package.
+| Source | Result | Environment/scope |
+|---|---|---|
+| Main runtime `6aa8022` | 73/73 tests, no skips | 23 September; Ubuntu 24.04.3, Python 3.12.14, PySide6/Qt 6.11.2, offscreen |
+| PR #6 `a560b5d` | 74/74 tests, no skips; offscreen smoke PASS | Same environment; separate unmerged implementation |
+| Earlier Fedora evidence | 65/65 plus offscreen smoke | [21 September historical record](docs/acceptance/2026-09-21-offscreen.md); not current native acceptance |
+
+Additional probes reproduced the listed code gaps despite the passing suites.
+Consolidation validates documentation coverage/links/order, not new runtime behavior.
+Steps 01/53 retain earlier scoped acceptance; native pointer/dialog/scaling,
+screen-reader checks and the 60-second animation target remain pending.
+
+Original visual references are absent from this checkout. OC-00 must locate the
+supplied originals before reference-parity acceptance. No release tag or full GUI
+acceptance is implied by the documentation replacement.
 
 ## Working agreements
 
-- [PLAN.md](PLAN.md): sole current scope, implementation and acceptance plan.
-- [ROADMAP.md](ROADMAP.md): sequence; [docs/acceptance/](docs/acceptance/): new evidence.
-- [AGENTS.md](AGENTS.md): mandatory documentation standard for all new or materially modified code.
-- Run commands from the repository root; use isolated data/settings for checks.
-- Retired files under `docs/archive/` and workspace `Version History/` are historical.
-- Update this file after meaningful implementation/verification; retain the difference
-  between implemented, automatically checked and manually accepted.
-
-## Repository and baseline identity
-
-This project is a Git repository on `main` and tracks `origin/main` at
-`BigBenKenobi/Otter-Cove`. The 22 September automated Otter Cove verification is
-current workspace evidence; it is not a tagged release baseline. Do not label the
-application a complete known-good GUI release while the issues above and native
-desktop acceptance remain unresolved.
+- Implement from PLAN; ROADMAP is only its sequence summary.
+- Apply AGENTS.md and the architecture/decision contracts.
+- Use isolated data/settings and record the tested source/platform/skips.
+- Preserve historical evidence; never relabel offscreen results as native.
+- Update this file after meaningful implementation/verification, including the
+  exact next task and remaining partial integration gates.

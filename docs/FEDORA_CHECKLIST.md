@@ -1,31 +1,51 @@
-# Deferred Fedora acceptance batch
+# Native Fedora acceptance checklist
 
-When you are back at the Fedora machine, start with one command from the project root:
+This is a procedure supporting [PLAN's shared acceptance gate](../PLAN.md#shared-acceptance-gate),
+not a second requirements list. Execute only against the corrected implementation
+for the selected scope; keep every unrun or failed cell open.
 
 ```bash
 ./scripts/fedora_phase_a_check.sh
 ```
 
-It records the Fedora/desktop/session/PySide6/Qt/GPU context, runs the full automated test suite, runs an isolated native-Qt smoke pass, and then prints the manual checks below. The smoke pass uses a temporary database and settings file; it does **not** modify your normal Otter Cove data.
+Record full SHA, Fedora version, KDE/GNOME, Wayland/actual Qt platform, Python/Qt,
+GPU/driver, display scale and available logical screen bounds. Use disposable data
+and settings for destructive cases. The current runner's “native” label alone
+does not prove its platform, and the printed checklist does not constitute a pass.
 
-## Manual checks to batch
+## Current foundation and chat
 
-- [ ] **Floating tools (39):** open two tools, drag/resize/raise them, minimize one, reopen it from navigation, close/reopen it, and resize the main window. Restart once and confirm normal geometry returns rather than the collapsed height.
-- [ ] **Theme presets (32):** with Theme and Settings open, switch several dark and light presets. Existing surfaces should update immediately and no light/white scroll viewport should appear in a dark preset. Restart on the chosen preset.
-- [ ] **Theme customization (33):** change primary and More Colors tokens, restart, then Reset Colors. Open a color picker and cancel; cancellation must change nothing.
-- [ ] **Appearance (47):** while text is sitting unsent in the composer, toggle full-width, welcome, Nobody, Web Search, Shell and one sidebar entry. The draft/session must remain. Reset must restore documented defaults.
-- [ ] **Typography/layout (35):** exercise Small/Default/Large, Compact/Comfortable/Roomy and Frosted at 1100×680 and your normal size. No primary control should become unreachable or unreadable.
-- [ ] **Backgrounds (36):** switch all ten effects. Solid should disable animation-only controls and run no animation timer. Change color/speed/intensity/quality/size, Pause, minimize the application briefly, restore it, and confirm the user Pause value did not change.
-- [ ] **Peek (38):** Peek a tool, minimize/restore it, change theme, close/reopen it. Only the body should fade; titlebar controls must remain usable and normal opacity must restore exactly.
-- [ ] **Harmony + theme save/share (34/37):** Generate should preview only; Apply should mutate theme colors. Save a named theme, restart/select it, export/import it, and try a duplicate/invalid import. Failed import must not alter the current theme.
-- [ ] **Shortcuts (50):** rebind Theme, deliberately create a conflict, clear/reset, restart, and verify the binding persists. Hide the usual New Chat/Settings navigation entries and verify their shortcuts still work.
+- [ ] Re-run full automation without skips; distinguish offscreen output from native tests.
+- [ ] Exercise startup against fresh/saved/corrupt/unavailable data with non-destructive recovery messages.
+- [ ] On the corrected R2 build, exercise export/import/reset happy/failure/cancel/confirm paths, protected destinations and preservation of excluded Nobody messages/drafts.
+- [ ] Open overlapping tools; drag/resize/raise/minimize/reopen; preserve chat/draft and distinct normal/minimized geometry through resize/restart/display changes.
+- [ ] Collapse/expand rapidly; check navigation, accessible names and Settings/New Chat keyboard access when optional entries are hidden.
+- [ ] Verify long composer drafts, empty restored sessions, normal/private transitions and ordinary keyboard editing/copy at minimum size.
+- [ ] Exercise all presets and semantic color controls with existing/new tools; test harmony preview/apply/reset, theme save/replace/import/export and every cancelled native dialog.
+- [ ] Verify implemented Appearance settings live and after restart. Sensitive blur, Web Search and Shell remain unavailable until their actual consumers pass; do not try to accept an inert control as working.
+- [ ] Inspect affected surfaces at Small/Default/Large and Compact/Comfortable/Roomy, including long labels and focus/selection/disabled contrast in light/dark themes. Verify the documented Frosted fallback.
+- [ ] Switch effects, resize, change controls, Pause/minimize/restore and test Solid's stopped timer. Peek remains visual-only with usable titlebar and exact restoration.
+- [ ] Rebind/conflict/clear/reset shortcuts; verify focus return, accessible announcements and ordinary text-editor keys.
+- [ ] Burst important errors, read details after toast dismissal, close during demo/animation/data work and restart safely.
 
-## Performance pass (later in the same Fedora session)
+Repeat relevant cells under KDE and GNOME Wayland at 100%, 150%, 200%, using the
+supported minimum/default/maximized layouts. Explicitly scope out unsupported
+environments; do not record them as passed. Capture matched states only against
+available supplied originals; missing originals remain a named parity blocker.
 
-Step 36 still needs its reference-machine 60-second animation trace at 1720×900 / Balanced quality. Do that after the functional checks so any visual/effect bug is fixed before spending time profiling.
+## Later session/composer additions
 
-## Phase A fix 1
+- [ ] After SC, exercise browser CRUD/archive/delete, search navigation, every streaming/status result, safe copy/reveal and private exclusion with the PLAN fixtures.
+- [ ] After CU, exercise popup focus/edges/lifecycle, native files/folders, removable/stale chips and complete normal/private draft ownership.
+- [ ] Verify Web/Shell fixtures remain labelled simulations with no network/process calls, and attachment-bearing Send remains unavailable until the submission contract exists.
+- [ ] Revalidate the named Notes/Library/Prompt/attachment/extraction gates when those consumers are implemented.
 
-The Fedora run on 2026-09-21 reached 64/65 automated tests with the native GUI smoke passing. The sole failure was the More Colors acceptance test querying effective visibility while the Customize stacked page was hidden. The toggle now tracks its own expansion state, and the test switches to Customize before asserting user-visible state.
+## Measurements and evidence
 
-Re-run `./scripts/fedora_phase_a_check.sh`; expected automated result is 65/65 before manual checks.
+Execute PLAN's native 60-second 1720×900/Balanced animation trace and record
+method/machine/samples/results; include Leaves and the most expensive observed
+effect. Apply the retained search/render/resource targets when those features exist.
+
+Store actual checklist outcomes, logs, performance output and needed captures
+with one source/environment manifest. Link acceptance records and update STATUS;
+do not mark whole feature steps Done when their remaining criteria are unrun.
